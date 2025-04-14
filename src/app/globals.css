@@ -2,79 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Cairo', sans-serif;
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: #0a0f1a;
+    --foreground: #e5e7eb;
+    --card: transparent;
+    --card-foreground: #e5e7eb;
+    --popover: #151c2a;
+    --popover-foreground: #e5e7eb;
+    --primary: #b91c1c;
+    --primary-foreground: #e5e7eb;
+    --secondary: #3e4859;
+    --secondary-foreground: #e5e7eb;
+    --muted: #2a3447;
+    --muted-foreground: #9ca3af;
+    --accent: #3b82f6;
+    --accent-foreground: #e5e7eb;
+    --destructive: #b91c1c;
+    --destructive-foreground: #e5e7eb;
+    --border: #2a3447;
+    --input: #151c2a;
+    --ring: #3b82f6;
+    --radius: 0.75rem;
+    --gradient-navy-base: 210, 65%, 12%;
+    --gradient-orange-base: 16, 100%, 50%;
+    --gradient-navy-alpha-40: hsla(var(--gradient-navy-base), 0.4);
+    --gradient-orange-alpha-15: hsla(var(--gradient-orange-base), 0.15);
+    --gradient-orange: hsl(var(--gradient-orange-base));
+    --sidebar-background: #151c2a;
+    --sidebar-foreground: #e5e7eb;
+    --sidebar-primary: #b91c1c;
+    --sidebar-primary-foreground: #e5e7eb;
+    --sidebar-accent: #3b82f6;
+    --sidebar-accent-foreground: #e5e7eb;
+    --sidebar-border: #2a3447;
+    --sidebar-ring: #3b82f6;
   }
+
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: #0a0f1a;
+    --foreground: #e5e7eb;
+    --card: transparent;
+    --card-foreground: #e5e7eb;
+    --popover: #151c2a;
+    --popover-foreground: #e5e7eb;
+    --primary: #b91c1c;
+    --primary-foreground: #e5e7eb;
+    --secondary: #3e4859;
+    --secondary-foreground: #e5e7eb;
+    --muted: #2a3447;
+    --muted-foreground: #9ca3af;
+    --accent: #3b82f6;
+    --accent-foreground: #e5e7eb;
+    --destructive: #b91c1c;
+    --destructive-foreground: #e5e7eb;
+    --border: #2a3447;
+    --input: #151c2a;
+    --ring: #3b82f6;
+    --radius: 0.75rem;
+    --gradient-navy-base: 210, 65%, 12%;
+    --gradient-orange-base: 16, 100%, 50%;
+    --gradient-navy-alpha-40: hsla(var(--gradient-navy-base), 0.4);
+    --gradient-orange-alpha-15: hsla(var(--gradient-orange-base), 0.15);
+    --gradient-orange: hsl(var(--gradient-orange-base));
+    --sidebar-background: #151c2a;
+    --sidebar-foreground: #e5e7eb;
+    --sidebar-primary: #b91c1c;
+    --sidebar-primary-foreground: #e5e7eb;
+    --sidebar-accent: #3b82f6;
+    --sidebar-accent-foreground: #e5e7eb;
+    --sidebar-border: #2a3447;
+    --sidebar-ring: #3b82f6;
   }
 }
 
@@ -82,7 +86,61 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.glass-card {
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  transition: all 0.3s ease-in-out;
+  text-align: center;
+  color: var(--text-light-primary);
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  position: relative;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-image: linear-gradient(-90deg, var(--gradient-navy-alpha-40), var(--gradient-orange-alpha-15));
+  overflow: hidden;
+}
+
+.glass-card::before,
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.glass-card::before {
+  border: 1px solid hsla(0, 0%, 80%, 0.5);
+  mask-image: linear-gradient(-135deg, hsla(0, 0%, 100%, 1), hsla(0, 0%, 100%, 0) 50%);
+  -webkit-mask-image: linear-gradient(-135deg, hsla(0, 0%, 100%, 1), hsla(0, 0%, 100%, 0) 50%);
+}
+
+.glass-card::after {
+  border: 1px solid hsl(var(--gradient-orange-base));
+  mask-image: linear-gradient(-135deg, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 100%, 1));
+  -webkit-mask-image: linear-gradient(-135deg, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 100%, 1));
+}
+
+.word-display-large {
+  font-size: clamp(2rem, 13vw, 6.5rem);
+  font-weight: 700;
+  color: white;
+  text-align: center;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.1;
+  width: 100%;
+  padding: 0.25rem 0;
+  margin-bottom: 0.25rem;
+  min-height: 1.2em;
+  direction: ltr;
+  unicode-bidi: embed;
 }
