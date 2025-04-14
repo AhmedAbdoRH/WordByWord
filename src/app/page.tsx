@@ -1,16 +1,42 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WordInput } from "@/components/word-input";
 import { FlashcardReview } from "@/components/flashcard-review";
+import { db } from "@/firebase/firebase-config";
+import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
 
 export default function Home() {
-  const [words, setWords] = useState<{ arabic: string; translation: string }[]>([]);
+  const [words, setWords] = useState<{ arabic: string; translation: string; id?: string }[]>([]);
   const [hardWords, setHardWords] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
 
-  const handleAddWords = (newWords: { arabic: string; translation: string }[]) => {
-    setWords((prevWords) => [...prevWords, ...newWords]);
+  const wordsCollectionRef = collection(db, "words");
+
+  useEffect(() => {
+    const getWords = async () => {
+      setLoading(true);
+      const data = await getDocs(wordsCollectionRef);
+      setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id } as { arabic: string; translation: string; id: string })));
+      setLoading(false);
+    };
+
+    getWords();
+  }, []);
+
+  const handleAddWords = async (newWords: { arabic: string; translation: string }[]) => {
+    try {
+      for (const word of newWords) {
+        await addDoc(wordsCollectionRef, word);
+      }
+      // Refresh words after adding
+      const data = await getDocs(wordsCollectionRef);
+      setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id } as { arabic: string; translation: string; id: string })));
+    } catch (error) {
+      console.error("Error adding words to Firestore:", error);
+    }
   };
 
   const handleToggleHardWord = (word: string, isHard: boolean) => {
@@ -24,6 +50,11 @@ export default function Home() {
       return newHardWords;
     });
   };
+
+  // Placeholder for loading state
+  if (loading) {
+    return <div className="text-center">Loading...</div>;
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -47,3 +78,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

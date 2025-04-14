@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -7,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, Check, X } from "lucide-react";
 
 interface FlashcardReviewProps {
-  words: { arabic: string; translation: string }[];
+  words: { arabic: string; translation: string, id?: string }[];
   hardWords: Set<string>;
   onToggleHardWord: (word: string, isHard: boolean) => void;
 }
@@ -102,3 +103,5 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWor
     </div>
   );
 };
+
+    
