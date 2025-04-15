@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -66,19 +65,19 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWor
   return (
     <div className="flex flex-col items-center">
       <Card className="glass-card p-6 w-full max-w-md mb-4">
-        <div className="text-4xl font-bold text-center mb-2" style={{ fontFamily: 'Cairo, sans-serif' }}>
-          {currentWord?.arabic}
+        <div className="text-4xl font-bold text-center mb-2">
+          {currentWord?.translation}
         </div>
         {showTranslation && (
           <div className="text-gray-500 text-center">
-            {currentWord?.translation}
+            {currentWord?.arabic}
           </div>
         )}
       </Card>
 
       <div className="flex justify-center space-x-4 mb-4">
         <Button variant="secondary" onClick={handleToggleTranslation}>
-          {showTranslation ? "إخفاء الترجمة" : "إظهار الترجمة"}
+          {showTranslation ? "إخفاء الكلمة العربية" : "إظهار الكلمة العربية"}
         </Button>
         <Button onClick={handleNextWord}>كلمة التالية</Button>
       </div>
@@ -103,5 +102,3 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWor
     </div>
   );
 };
-
-    
