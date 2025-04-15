@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WordInput } from "@/components/word-input";
 import { FlashcardReview } from "@/components/flashcard-review";
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { SignIn } from "@/components/sign-in";
 import { SignUp } from "@/components/sign-up";
@@ -47,11 +47,12 @@ export default function Home() {
   }, []);
 
   const getWords = useCallback(async () => {
-    if (!wordsCollectionRef) return;
+    if (!wordsCollectionRef || !user) return;
 
     setLoading(true);
     try {
-      const data = await getDocs(wordsCollectionRef);
+      const q = query(wordsCollectionRef, where("uid", "==", user.uid));
+      const data = await getDocs(q);
       setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     } catch (error) {
       console.error("Error fetching words:", error);
@@ -59,20 +60,20 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [wordsCollectionRef]);
+  }, [wordsCollectionRef, user]);
 
   useEffect(() => {
-    if (wordsCollectionRef) {
+    if (wordsCollectionRef && user) {
       getWords();
     }
-  }, [wordsCollectionRef, getWords]);
+  }, [wordsCollectionRef, getWords, user]);
 
   const handleAddWords = async (newWords: { arabic: string; translation: string }[]) => {
-    if (!wordsCollectionRef) return;
+    if (!wordsCollectionRef || !user) return;
 
     try {
       for (const word of newWords) {
-        await addDoc(wordsCollectionRef, word);
+        await addDoc(wordsCollectionRef, { ...word, uid: user.uid });
       }
       // Refresh words after adding
       await getWords();
