@@ -38,10 +38,14 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
 
   const currentWord = words[currentWordIndex];
 
-  const handleNextWord = useCallback(() => {
-    setCurrentWordIndex((prevIndex) => (prevIndex + 1) % words.length);
+  const handlePreviousWord = useCallback(() => {
+    setCurrentWordIndex((prevIndex) => {
+      const newIndex = (prevIndex - 1 + words.length) % words.length;
+      return newIndex;
+    });
     setShowTranslation(false);
   }, [words.length]);
+
 
   useEffect(() => {
     if (words.length === 0) {
@@ -61,7 +65,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
         const newHardWords = prevHardWords.filter(word => word.arabic !== currentWord.arabic);
         return newHardWords;
       });
-      handleNextWord();
+      handlePreviousWord();
     }
   };
 
@@ -71,7 +75,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
         const newHardWords = [...prevHardWords, { arabic: currentWord.arabic, translation: currentWord.translation }];
         return newHardWords;
       });
-      handleNextWord();
+      handlePreviousWord();
     }
   };
 
@@ -96,7 +100,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
         <Button variant="secondary" onClick={handleToggleTranslation}>
           {showTranslation ? "إخفاء الكلمة العربية" : "إظهار الكلمة العربية"}
         </Button>
-        <Button onClick={handleNextWord}>كلمة التالية</Button>
+        <Button onClick={handlePreviousWord}>الكلمة السابقة</Button>
       </div>
 
       <div className="flex justify-center space-x-4">
