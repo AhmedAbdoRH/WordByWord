@@ -7,18 +7,12 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth-provider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 
 const cairo = Cairo({
   subsets: ['arabic'],
   weight: ['400', '600', '700'],
   variable: '--font-cairo',
 });
-
-export const metadata: Metadata = {
-  title: 'VocabMaster Arabic',
-  description: 'Learn Arabic Vocabulary',
-};
 
 export default function RootLayout({
   children,
@@ -27,10 +21,6 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
   const isHardWordsPage = pathname === '/hard-words';
-
-  useEffect(() => {
-    console.log('RootLayout useEffect triggered');
-  }, []);
 
   return (
     <html lang="ar" dir="rtl">
