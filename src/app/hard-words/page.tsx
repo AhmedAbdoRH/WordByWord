@@ -5,72 +5,47 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-provider";
 import { Card } from "@/components/ui/card";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/firebase/firebase-config";
+import { getDocs, collection, query, where, deleteDoc, doc } from "firebase/firestore";
 
 interface HardWord {
   arabic: string;
   translation: string;
+  id: string;
 }
 
 const HardWordsPage = () => {
   const [hardWords, setHardWords] = useState<HardWord[]>([]);
-    //const [db, setDb] = useState<any>(null);
-    const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
+  const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
-        /*if (!firebaseConfig.apiKey) {
-            console.error("Firebase configuration is missing. Ensure all NEXT_PUBLIC_FIREBASE_* environment variables are set.");
-            return;
-        }*/
+    if (!db) {
+      console.error("Firebase is not initialized.");
+      return;
+    }
+    setWordsCollectionRef(collection(db, "words"));
+  }, []);
 
-        try {
-            //const app = initializeApp(firebaseConfig);
-            //const firestore = getFirestore(app);
-            //setDb(firestore);
-            const firestore = db;
-            setWordsCollectionRef(collection(firestore, "words"));
-        } catch (error) {
-            console.error("Error initializing Firebase:", error);
-        }
-    }, []);
+  const getWords = useCallback(async () => {
+    if (!wordsCollectionRef || !user) return;
 
-    const getWords = useCallback(async () => {
-        if (!wordsCollectionRef || !user) return;
+    try {
+      const q = query(wordsCollectionRef, where("uid", "==", user.uid));
+      const data = await getDocs(q);
+      const allWords = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+      setHardWords(allWords);
+    } catch (error) {
+      console.error("Error fetching words:", error);
+    }
+  }, [wordsCollectionRef, user]);
 
-        try {
-            const q = query(wordsCollectionRef, where("uid", "==", user.uid));
-            const data = await getDocs(q);
-            //setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-            const allWords = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-            // Filter out "easy" words here by checking if they exist in localStorage
-            /*const filteredWords = allWords.filter((word) => {
-                const storedHardWords = localStorage.getItem('hardWords');
-                if (!storedHardWords) return false; //If no hard words exists all are hard words
-
-                const hardWordsArray = JSON.parse(storedHardWords);
-                const found = hardWordsArray.some((hw: HardWord) => hw.arabic === word.arabic && hw.translation === word.translation);
-
-                return found;
-            });*/
-
-
-            setHardWords(allWords);
-        } catch (error) {
-            console.error("Error fetching words:", error);
-            // Optionally set an error state to display an error message to the user
-        }
-    }, [wordsCollectionRef, user]);
-
-
-    useEffect(() => {
-        if (wordsCollectionRef && user) {
-            getWords();
-        }
-    }, [wordsCollectionRef, getWords, user]);
+  useEffect(() => {
+    if (wordsCollectionRef && user) {
+      getWords();
+    }
+  }, [wordsCollectionRef, getWords, user]);
 
   const handleCopyToClipboard = () => {
     const textToCopy = hardWords.map(word => `${word.arabic}: ${word.translation}`).join("\n");
@@ -79,6 +54,33 @@ const HardWordsPage = () => {
       title: "تم نسخ الكلمات الصعبة إلى الحافظة!",
     });
   };
+
+  const handleDeleteAllWords = async () => {
+    if (!wordsCollectionRef || !user) return;
+
+    try {
+      const q = query(wordsCollectionRef, where("uid", "==", user.uid));
+      const data = await getDocs(q);
+
+      // Delete each document individually
+      data.docs.forEach(async (docSnapshot) => {
+        const docRef = doc(db, "words", docSnapshot.id);
+        await deleteDoc(docRef);
+      });
+
+      setHardWords([]); // Clear the local state
+      toast({
+        title: "تم حذف جميع الكلمات الصعبة!",
+      });
+    } catch (error) {
+      console.error("Error deleting all words:", error);
+      toast({
+        title: "فشل حذف جميع الكلمات.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   return (
     <div className="container mx-auto py-10">
@@ -96,9 +98,12 @@ const HardWordsPage = () => {
             </ul>
           </Card>
 
-          <div className="flex justify-center">
+          <div className="flex justify-center space-x-4">
             <Button variant="outline" onClick={handleCopyToClipboard}>
               نسخ الكلمات الصعبة
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAllWords}>
+              حذف الكل
             </Button>
           </div>
         </>
