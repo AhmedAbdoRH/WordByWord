@@ -11,6 +11,9 @@ import { SignIn } from "@/components/sign-in";
 import { SignUp } from "@/components/sign-up";
 import { SignOut } from "@/components/sign-out";
 import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { generateWords } from "@/ai/flows/generate-words-flow";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -29,6 +32,8 @@ export default function Home() {
   const [db, setDb] = useState<any>(null);
   const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
+  const [generatedWords, setGeneratedWords] = useState<{ english: string; arabic: string }[]>([]);
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
 
   useEffect(() => {
     // Initialize Firebase and Firestore only on the client side
@@ -95,6 +100,11 @@ export default function Home() {
     });
   };
 
+  const handleGenerateWords = async () => {
+    const newGeneratedWords = await generateWords({ difficulty });
+    setGeneratedWords(newGeneratedWords);
+  };
+
   if (authLoading) {
     return <div className="text-center">تحميل...</div>;
   }
@@ -114,6 +124,32 @@ export default function Home() {
             </TabsList>
             <TabsContent value="add" className="mt-5">
               <WordInput onAddWords={handleAddWords} />
+              <div className="mt-4 glass-card p-4">
+                <h2 className="text-lg font-semibold mb-2">Generate Words</h2>
+                <div className="flex items-center space-x-4 mb-2">
+                  <Select onValueChange={(value) => setDifficulty(value as 'easy' | 'medium' | 'hard')}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Easy</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="hard">Hard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleGenerateWords}>Generate Words</Button>
+                </div>
+                {generatedWords.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-md font-semibold mb-2">Generated Words:</h3>
+                    <ul>
+                      {generatedWords.map((word, index) => (
+                        <li key={index}>{word.english} : {word.arabic}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </TabsContent>
             <TabsContent value="review" className="mt-5">
               <FlashcardReview
@@ -121,13 +157,12 @@ export default function Home() {
                 hardWords={hardWords}
                 onToggleHardWord={handleToggleHardWord}
               />
-               <div className="flex justify-center mt-4">
+              <div className="flex justify-center mt-4">
                 <Link href="/hard-words" className="bg-secondary text-secondary-foreground p-2 rounded-md">
-                    عرض الكلمات الصعبة
+                  عرض الكلمات الصعبة
                 </Link>
-            </div>
+              </div>
             </TabsContent>
-
           </Tabs>
         </>
       ) : (
@@ -139,5 +174,3 @@ export default function Home() {
     </div>
   );
 }
-
-
