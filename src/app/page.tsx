@@ -28,15 +28,15 @@ const firebaseConfig = {
 };
 
 export default function Home() {
-  const [words, setWords] = useState<{ arabic: string; translation: string; id?: string }[]>([]);
+  const [words, setWords<{ arabic: string; translation: string; id?: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [db, setDb] = useState<any>(null);
-  const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
+  const [db, setDb<any>(null);
+  const [wordsCollectionRef, setWordsCollectionRef<any>(null);
   const { user, loading: authLoading } = useAuth();
-  const [generatedWords, setGeneratedWords] = useState<{ english: string; arabic: string }[]>([]);
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
-  const [bulkInput, setBulkInput] = useState(""); // Added state for word input
-
+  const [generatedWords, setGeneratedWords<{ english: string; arabic: string }[]>([]);
+  const [difficulty, setDifficulty<"easy" | "medium" | "hard">("easy");
+  const [bulkInput, setBulkInput](useState("")); // Added state for word input
+  const [hardWords, setHardWords](useState<{ arabic: string; translation: string; id?: string }[]>[]);
 
   useEffect(() => {
     // Initialize Firebase and Firestore only on the client side
@@ -55,22 +55,23 @@ export default function Home() {
     }
   }, []);
 
-  const getWords = useCallback(async () => {
-    if (!wordsCollectionRef || !user) return;
+    const getWords = useCallback(async () => {
+        if (!wordsCollectionRef || !user) return;
 
-    setLoading(true);
-    try {
-      const q = query(wordsCollectionRef, where("uid", "==", user.uid));
-      const data = await getDocs(q);
-      setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    } catch (error) {
-      console.error("Error fetching words:", error);
-      // Optionally set an error state to display an error message to the user
-    } finally {
-      setLoading(false);
-    }
-  }, [wordsCollectionRef, user]);
-
+        setLoading(true);
+        try {
+            const q = query(wordsCollectionRef, where("uid", "==", user.uid));
+            const data = await getDocs(q);
+            const allWords = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
+            setWords(allWords);
+            //console.log("allWords", allWords);
+        } catch (error) {
+            console.error("Error fetching words:", error);
+            // Optionally set an error state to display an error message to the user
+        } finally {
+            setLoading(false);
+        }
+    }, [wordsCollectionRef, user]);
   useEffect(() => {
     if (wordsCollectionRef && user) {
       getWords();
@@ -90,29 +91,30 @@ export default function Home() {
       console.error("Error adding words to Firestore:", error);
     }
   };
+
     const handleToggleHardWord = async (word: string, isHard: boolean) => {
-      if (!wordsCollectionRef || !user) return;
+        if (!wordsCollectionRef || !user) return;
 
-      try {
-        const q = query(wordsCollectionRef, where("uid", "==", user.uid), where("translation", "==", word));
-        const data = await getDocs(q);
+        try {
+            const q = query(wordsCollectionRef, where("uid", "==", user.uid), where("translation", "==", word));
+            const data = await getDocs(q);
 
-        data.docs.forEach(async (docSnapshot) => {
-          const docRef = doc(db, "words", docSnapshot.id);
-          if (isHard) {
-            // Mark word as hard
-            // await updateDoc(docRef, { difficulty: "hard" });
-          } else {
-            // Delete word if it's easy
-            await deleteDoc(docRef);
-          }
-        });
+            data.docs.forEach(async (docSnapshot) => {
+                const docRef = doc(db, "words", docSnapshot.id);
+                if (isHard) {
+                    // Mark word as hard
+                    // await updateDoc(docRef, { difficulty: "hard" });
+                } else {
+                    // Delete word if it's easy
+                    await deleteDoc(docRef);
+                }
+            });
 
-        // Refresh words after toggling
-        await getWords();
-      } catch (error) {
-        console.error("Error toggling hard word in Firestore:", error);
-      }
+            // Refresh words after toggling
+            await getWords();
+        } catch (error) {
+            console.error("Error toggling hard word in Firestore:", error);
+        }
     };
   const handleGenerateWords = async (selectedDifficulty: 'easy' | 'medium' | 'hard') => {
     setDifficulty(selectedDifficulty);
@@ -129,7 +131,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold text-center mb-5">VocabMaster Arabic</h1>
+      <h1 className="text-2xl font-bold text-center mb-5">كلماتي</h1>
       {user ? (
         <>
           <div className="flex justify-end mb-4">
@@ -138,7 +140,6 @@ export default function Home() {
           <Tabs defaultValue="add">
             <TabsList className="w-full justify-center">
               <TabsTrigger value="add">إضافة كلمات</TabsTrigger>
-              <TabsTrigger value="review">مراجعة الكلمات</TabsTrigger>
             </TabsList>
             <TabsContent value="add" className="mt-5">
                 <WordInput
@@ -148,18 +149,18 @@ export default function Home() {
                   onGenerateWords={handleGenerateWords}
                 />
             </TabsContent>
-            <TabsContent value="review" className="mt-5">
-              <FlashcardReview
-                words={words}
-                onToggleHardWord={handleToggleHardWord}
-              />
-              <div className="flex justify-center mt-4">
-                <Link href="/hard-words" className="bg-secondary text-secondary-foreground p-2 rounded-md">
-                  عرض الكلمات الصعبة
-                </Link>
-              </div>
-            </TabsContent>
           </Tabs>
+           <div className="flex flex-col items-center mt-4">
+                <FlashcardReview
+                    words={words}
+                    onToggleHardWord={handleToggleHardWord}
+                />
+                <div className="flex justify-center mt-4">
+                    <Link href="/hard-words" className="bg-secondary text-secondary-foreground p-2 rounded-md">
+                        عرض الكلمات الصعبة
+                    </Link>
+                </div>
+            </div>
         </>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
