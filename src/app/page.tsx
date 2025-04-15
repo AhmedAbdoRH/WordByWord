@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { generateWords } from "@/ai/flows/generate-words-flow";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus } from "lucide-react";
+import { FlashcardReview } from "@/components/flashcard-review"; // Import FlashcardReview
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
