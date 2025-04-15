@@ -5,8 +5,7 @@ import { Cairo } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth-provider';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { metadata } from '../metadata';
 
 const cairo = Cairo({
   subsets: ['arabic'],
@@ -19,8 +18,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const isHardWordsPage = pathname === '/hard-words';
 
   return (
     <html lang="ar" dir="rtl">
@@ -36,5 +33,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
