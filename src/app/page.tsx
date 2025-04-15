@@ -10,6 +10,7 @@ import { useAuth } from "@/components/auth-provider";
 import { SignIn } from "@/components/sign-in";
 import { SignUp } from "@/components/sign-up";
 import { SignOut } from "@/components/sign-out";
+import Link from 'next/link';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -120,7 +121,13 @@ export default function Home() {
                 hardWords={hardWords}
                 onToggleHardWord={handleToggleHardWord}
               />
+               <div className="flex justify-center mt-4">
+                <Link href="/hard-words" className="bg-secondary text-secondary-foreground p-2 rounded-md">
+                    عرض الكلمات الصعبة
+                </Link>
+            </div>
             </TabsContent>
+
           </Tabs>
         </>
       ) : (
@@ -132,4 +139,5 @@ export default function Home() {
     </div>
   );
 }
+
 

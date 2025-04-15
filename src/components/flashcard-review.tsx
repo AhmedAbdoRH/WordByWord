@@ -100,13 +100,13 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
       </div>
 
       <div className="flex justify-center space-x-4">
-        <Button variant="success" onClick={handleMarkEasy}>
-          <Check className="w-4 h-4 ml-2" />
-          سهلة
-        </Button>
         <Button variant="destructive" onClick={handleMarkHard}>
           <X className="w-4 h-4 ml-2" />
           صعبة
+        </Button>
+        <Button variant="success" onClick={handleMarkEasy}>
+          <Check className="w-4 h-4 ml-2" />
+          سهلة
         </Button>
       </div>
 

@@ -30,11 +30,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
-          {!isHardWordsPage && (
-            <Link href="/hard-words" className="bottom-nav-button bg-secondary text-secondary-foreground p-2 rounded-md">
-              عرض الكلمات الصعبة
-            </Link>
-          )}
+
         </AuthProvider>
       </body>
     </html>
