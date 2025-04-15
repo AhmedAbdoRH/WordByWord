@@ -21,6 +21,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   const [easyWords, setEasyWords] = useState<string[]>([]); // Store easy words
   const [hardWordCount, setHardWordCount] = useState(0);
   const [reviewCompleted, setReviewCompleted] = useState(false); // Track if review is completed
+  const [allWordsCount, setAllWordsCount] = useState(0);
 
   const currentWord = words[currentWordIndex];
 
@@ -59,6 +60,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   const handleMarkEasy = () => {
     if (currentWord) {
       setEasyWords(prev => [...prev, currentWord.translation]); // Add to easy words list
+      setAllWordsCount(prevCount => prevCount + 1);
       handleNextWord();
     }
   };
@@ -66,6 +68,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   const handleMarkHard = () => {
     if (currentWord) {
       setHardWordCount(prevCount => prevCount + 1);
+      setAllWordsCount(prevCount => prevCount + 1);
       onToggleHardWord(currentWord.translation, true);
       handleNextWord();
     }
@@ -82,10 +85,10 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   };
 
   useEffect(() => {
-    if (currentWordIndex >= words.length && words.length > 0) {
+    if (allWordsCount >= words.length && words.length > 0) {
       handleReviewComplete();
     }
-  }, [currentWordIndex, words.length, handleReviewComplete]);
+  }, [allWordsCount, words.length, handleReviewComplete]);
 
   const progress = words.length > 0 ? ((currentWordIndex + 1) / words.length) * 100 : 0;
 
@@ -107,6 +110,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
             });
             setCurrentWordIndex(0);
             setReviewCompleted(false);
+            setAllWordsCount(0);
             router.push('/')
           }}>
             العودة إلى صفحة الإدخال
@@ -118,6 +122,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
             });
             setCurrentWordIndex(0);
             setReviewCompleted(false);
+            setAllWordsCount(0);
           }}>
             المراجعة مرة أخرى
           </Button>
@@ -141,6 +146,8 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
         <div className="flex justify-between text-sm text-muted-foreground mt-1">
           <span>الكلمات الصعبة:</span>
           <span>{hardWordCount}</span>
+          <span>الكلمات التي تمت مراجعتها:</span>
+          <span>{allWordsCount}</span>
         </div>
       </div>
 
