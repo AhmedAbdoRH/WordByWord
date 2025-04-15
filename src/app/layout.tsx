@@ -28,16 +28,17 @@ export default function RootLayout({
       </head>
       <body className={`font-cairo antialiased`}>
         <AuthProvider>
+          {children}
+          <Toaster />
           {!isHardWordsPage && (
-            <Link href="/hard-words" className="fixed top-4 left-4 bg-secondary text-secondary-foreground p-2 rounded-md z-50">
+            <Link href="/hard-words" className="bottom-nav-button bg-secondary text-secondary-foreground p-2 rounded-md">
               عرض الكلمات الصعبة
             </Link>
           )}
-          {children}
-          <Toaster />
         </AuthProvider>
       </body>
     </html>
   );
 }
+
 

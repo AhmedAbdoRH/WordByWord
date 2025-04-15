@@ -6,8 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-provider";
 import { Card } from "@/components/ui/card";
 
+interface HardWord {
+  arabic: string;
+  translation: string;
+}
+
 const HardWordsPage = () => {
-  const [hardWords, setHardWords] = useState<string[]>([]);
+  const [hardWords, setHardWords] = useState<HardWord[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -19,7 +24,8 @@ const HardWordsPage = () => {
   }, []);
 
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(hardWords.join("\n"));
+    const textToCopy = hardWords.map(word => `${word.arabic}: ${word.translation}`).join("\n");
+    navigator.clipboard.writeText(textToCopy);
     toast({
       title: "تم نسخ الكلمات الصعبة إلى الحافظة!",
     });
@@ -34,7 +40,9 @@ const HardWordsPage = () => {
           <Card className="glass-card p-6 w-full max-w-md mx-auto mb-4">
             <ul className="list-disc list-inside">
               {hardWords.map((word, index) => (
-                <li key={index}>{word}</li>
+                <li key={index}>
+                  {word.arabic} : {word.translation}
+                </li>
               ))}
             </ul>
           </Card>
@@ -53,3 +61,4 @@ const HardWordsPage = () => {
 };
 
 export default HardWordsPage;
+
