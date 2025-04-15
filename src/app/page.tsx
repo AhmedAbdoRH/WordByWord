@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WordInput } from "@/components/word-input";
 import { FlashcardReview } from "@/components/flashcard-review";
@@ -41,26 +41,26 @@ export default function Home() {
     }
   }, []);
 
+  const getWords = useCallback(async () => {
+    if (!wordsCollectionRef) return;
+
+    setLoading(true);
+    try {
+      const data = await getDocs(wordsCollectionRef);
+      setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    } catch (error) {
+      console.error("Error fetching words:", error);
+      // Optionally set an error state to display an error message to the user
+    } finally {
+      setLoading(false);
+    }
+  }, [wordsCollectionRef]);
+
   useEffect(() => {
-    const getWords = async () => {
-      if (!wordsCollectionRef) return;
-
-      setLoading(true);
-      try {
-        const data = await getDocs(wordsCollectionRef);
-        setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-      } catch (error) {
-        console.error("Error fetching words:", error);
-        // Optionally set an error state to display an error message to the user
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (wordsCollectionRef) {
       getWords();
     }
-  }, [wordsCollectionRef]);
+  }, [wordsCollectionRef, getWords]);
 
   const handleAddWords = async (newWords: { arabic: string; translation: string }[]) => {
     if (!wordsCollectionRef) return;
@@ -70,8 +70,7 @@ export default function Home() {
         await addDoc(wordsCollectionRef, word);
       }
       // Refresh words after adding
-      const data = await getDocs(wordsCollectionRef);
-      setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+      await getWords();
     } catch (error) {
       console.error("Error adding words to Firestore:", error);
     }
