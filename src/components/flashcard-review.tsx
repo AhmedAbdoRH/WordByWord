@@ -17,6 +17,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   const [showTranslation, setShowTranslation] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const [easyWords, setEasyWords] = useState<string[]>([]); // Store easy words
 
   const currentWord = words[currentWordIndex];
 
@@ -46,10 +47,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
       });
     }
     // If all words are reviewed, redirect to hard words page
-    if (words.length > 0 && currentWordIndex >= words.length) {
-      router.push('/hard-words');
-    }
-  }, [words, toast, currentWordIndex, router]);
+  }, [words, toast, router]);
 
   const handleToggleTranslation = () => {
     setShowTranslation((prev) => !prev);
@@ -57,7 +55,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
   const handleMarkEasy = () => {
     if (currentWord) {
-      onToggleHardWord(currentWord.translation, false);
+      setEasyWords(prev => [...prev, currentWord.translation]); // Add to easy words list
       handleNextWord();
     }
   };
@@ -70,6 +68,10 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   };
 
   const handleReviewComplete = () => {
+      // Delete all words marked as easy
+      easyWords.forEach(word => {
+        onToggleHardWord(word, false);
+      });
     // Navigate to hard words page
     router.push('/hard-words');
   };
@@ -85,11 +87,26 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
           تمت مراجعة جميع الكلمات!
         </div>
         <div className="flex justify-center space-x-4">
-          <Button onClick={() => { setCurrentWordIndex(0); router.push('/') }}>
+          <Button onClick={() => {
+             // Delete all words marked as easy
+             easyWords.forEach(word => {
+                onToggleHardWord(word, false);
+              });
+            setCurrentWordIndex(0);
+            router.push('/')
+             }}>
             العودة إلى صفحة الإدخال
           </Button>
-          <Button variant="secondary" onClick={() => { setCurrentWordIndex(0); }}>
+          <Button variant="secondary" onClick={() => {
+            // Delete all words marked as easy
+            easyWords.forEach(word => {
+                onToggleHardWord(word, false);
+              });
+              setCurrentWordIndex(0); }}>
             المراجعة مرة أخرى
+          </Button>
+           <Button variant="secondary" onClick={handleReviewComplete}>
+            الذهاب إلى الكلمات الصعبة
           </Button>
         </div>
       </div>
