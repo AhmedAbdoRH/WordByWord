@@ -17,9 +17,15 @@ export default function Home() {
   useEffect(() => {
     const getWords = async () => {
       setLoading(true);
-      const data = await getDocs(wordsCollectionRef);
-      setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id } as { arabic: string; translation: string; id: string })));
-      setLoading(false);
+      try {
+        const data = await getDocs(wordsCollectionRef);
+        setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id } as { arabic: string; translation: string; id: string })));
+      } catch (error) {
+        console.error("Error fetching words:", error);
+        // Optionally set an error state to display an error message to the user
+      } finally {
+        setLoading(false);
+      }
     };
 
     getWords();
@@ -50,11 +56,6 @@ export default function Home() {
     });
   };
 
-  // Placeholder for loading state
-  if (loading) {
-    return <div className="text-center">Loading...</div>;
-  }
-
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold text-center mb-5">VocabMaster Arabic</h1>
@@ -77,5 +78,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
