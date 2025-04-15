@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -59,7 +58,7 @@ export default function Home() {
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold text-center mb-5">VocabMaster Arabic</h1>
-      <Tabs defaultActiveKey="add">
+      <Tabs defaultValue="add">
         <TabsList className="w-full justify-center">
           <TabsTrigger value="add">إضافة كلمات</TabsTrigger>
           <TabsTrigger value="review">مراجعة الكلمات</TabsTrigger>
