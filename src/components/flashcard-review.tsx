@@ -44,7 +44,15 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
       return newIndex;
     });
     setShowTranslation(false);
-  }, [words.length]);
+  }, [words, words.length]);
+
+  const handleNextWord = useCallback(() => {
+    setCurrentWordIndex((prevIndex) => {
+      const newIndex = (prevIndex + 1) % words.length;
+      return newIndex;
+    });
+    setShowTranslation(false);
+  }, [words, words.length]);
 
 
   useEffect(() => {
@@ -65,7 +73,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
         const newHardWords = prevHardWords.filter(word => word.arabic !== currentWord.arabic);
         return newHardWords;
       });
-      handlePreviousWord();
+      handleNextWord();
     }
   };
 
@@ -75,7 +83,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
         const newHardWords = [...prevHardWords, { arabic: currentWord.arabic, translation: currentWord.translation }];
         return newHardWords;
       });
-      handlePreviousWord();
+      handleNextWord();
     }
   };
 
@@ -100,7 +108,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
         <Button variant="secondary" onClick={handleToggleTranslation}>
           {showTranslation ? "إخفاء الكلمة العربية" : "إظهار الكلمة العربية"}
         </Button>
-        <Button onClick={handlePreviousWord}>الكلمة السابقة</Button>
+         <Button onClick={handlePreviousWord}>الكلمة السابقة</Button>
       </div>
 
       <div className="flex justify-center space-x-4">
