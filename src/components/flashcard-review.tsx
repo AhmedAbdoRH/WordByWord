@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import { Progress } from "@/components/ui/progress";
 
 interface FlashcardReviewProps {
   words: { arabic: string; translation: string, id?: string }[];
@@ -18,6 +19,8 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   const { toast } = useToast();
   const router = useRouter();
   const [easyWords, setEasyWords] = useState<string[]>([]); // Store easy words
+  const [hardWordCount, setHardWordCount] = useState(0);
+  const [reviewCompleted, setReviewCompleted] = useState(false); // Track if review is completed
 
   const currentWord = words[currentWordIndex];
 
@@ -62,25 +65,35 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
   const handleMarkHard = () => {
     if (currentWord) {
+      setHardWordCount(prevCount => prevCount + 1);
       onToggleHardWord(currentWord.translation, true);
       handleNextWord();
     }
   };
 
   const handleReviewComplete = () => {
-      // Delete all words marked as easy
-      easyWords.forEach(word => {
-        onToggleHardWord(word, false);
-      });
+    // Delete all words marked as easy
+    easyWords.forEach(word => {
+      onToggleHardWord(word, false);
+    });
+    setReviewCompleted(true);
     // Navigate to hard words page
     router.push('/hard-words');
   };
+
+  useEffect(() => {
+    if (currentWordIndex >= words.length && words.length > 0) {
+      handleReviewComplete();
+    }
+  }, [currentWordIndex, words.length, handleReviewComplete]);
+
+  const progress = words.length > 0 ? ((currentWordIndex + 1) / words.length) * 100 : 0;
 
   if (words.length === 0) {
     return <div className="text-center">الرجاء إضافة بعض الكلمات أولاً.</div>;
   }
 
-  if (currentWordIndex >= words.length) {
+  if (reviewCompleted) {
     return (
       <div className="flex flex-col items-center">
         <div className="text-center text-lg mb-4">
@@ -88,24 +101,27 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
         </div>
         <div className="flex justify-center space-x-4">
           <Button onClick={() => {
-             // Delete all words marked as easy
-             easyWords.forEach(word => {
-                onToggleHardWord(word, false);
-              });
+            // Delete all words marked as easy
+            easyWords.forEach(word => {
+              onToggleHardWord(word, false);
+            });
             setCurrentWordIndex(0);
+            setReviewCompleted(false);
             router.push('/')
-             }}>
+          }}>
             العودة إلى صفحة الإدخال
           </Button>
           <Button variant="secondary" onClick={() => {
             // Delete all words marked as easy
             easyWords.forEach(word => {
-                onToggleHardWord(word, false);
-              });
-              setCurrentWordIndex(0); }}>
+              onToggleHardWord(word, false);
+            });
+            setCurrentWordIndex(0);
+            setReviewCompleted(false);
+          }}>
             المراجعة مرة أخرى
           </Button>
-           <Button variant="secondary" onClick={handleReviewComplete}>
+          <Button variant="secondary" onClick={handleReviewComplete}>
             الذهاب إلى الكلمات الصعبة
           </Button>
         </div>
@@ -115,6 +131,19 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
   return (
     <div className="flex flex-col items-center">
+
+      <div className="mb-4 w-full max-w-md">
+        <div className="flex justify-between text-sm text-muted-foreground">
+          <span>التقدم:</span>
+          <span>{currentWordIndex + 1} / {words.length}</span>
+        </div>
+        <Progress value={progress} className="h-2" />
+        <div className="flex justify-between text-sm text-muted-foreground mt-1">
+          <span>الكلمات الصعبة:</span>
+          <span>{hardWordCount}</span>
+        </div>
+      </div>
+
       <Card className="glass-card p-6 w-full max-w-md mb-4">
         <div className="text-4xl font-bold text-center mb-2">
           {currentWord?.translation}
@@ -143,8 +172,6 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
           سهلة
         </Button>
       </div>
-
-
     </div>
   );
 };
