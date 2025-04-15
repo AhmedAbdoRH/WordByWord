@@ -107,7 +107,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWor
     <div className="flex flex-col items-center">
       <Card className="glass-card p-6 w-full max-w-md mb-4">
         <div className="text-4xl font-bold text-center mb-2">
-          {currentWord?.translation}
+          {currentWord?.english}
         </div>
         {showTranslation && (
           <div className="text-gray-500 text-center">

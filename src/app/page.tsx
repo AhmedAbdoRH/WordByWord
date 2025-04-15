@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WordInput } from "@/components/word-input";
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, query, where } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, query, where, deleteDoc, doc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { SignIn } from "@/components/sign-in";
 import { SignUp } from "@/components/sign-up";
@@ -29,7 +29,6 @@ const firebaseConfig = {
 
 export default function Home() {
   const [words, setWords] = useState<{ arabic: string; translation: string; id?: string }[]>([]);
-  const [hardWords, setHardWords] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [db, setDb] = useState<any>(null);
   const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
@@ -91,18 +90,30 @@ export default function Home() {
       console.error("Error adding words to Firestore:", error);
     }
   };
+    const handleToggleHardWord = async (word: string, isHard: boolean) => {
+      if (!wordsCollectionRef || !user) return;
 
-  const handleToggleHardWord = (word: string, isHard: boolean) => {
-    setHardWords((prevHardWords) => {
-      const newHardWords = new Set(prevHardWords);
-      if (isHard) {
-        newHardWords.add(word);
-      } else {
-        newHardWords.delete(word);
+      try {
+        const q = query(wordsCollectionRef, where("uid", "==", user.uid), where("translation", "==", word));
+        const data = await getDocs(q);
+
+        data.docs.forEach(async (docSnapshot) => {
+          const docRef = doc(db, "words", docSnapshot.id);
+          if (isHard) {
+            // Mark word as hard
+            // await updateDoc(docRef, { difficulty: "hard" });
+          } else {
+            // Delete word if it's easy
+            await deleteDoc(docRef);
+          }
+        });
+
+        // Refresh words after toggling
+        await getWords();
+      } catch (error) {
+        console.error("Error toggling hard word in Firestore:", error);
       }
-      return newHardWords;
-    });
-  };
+    };
   const handleGenerateWords = async (selectedDifficulty: 'easy' | 'medium' | 'hard') => {
     setDifficulty(selectedDifficulty);
     const newGeneratedWords = await generateWords({ difficulty: selectedDifficulty });
@@ -140,7 +151,6 @@ export default function Home() {
             <TabsContent value="review" className="mt-5">
               <FlashcardReview
                 words={words}
-                hardWords={hardWords}
                 onToggleHardWord={handleToggleHardWord}
               />
               <div className="flex justify-center mt-4">
