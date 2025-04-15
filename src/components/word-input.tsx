@@ -4,14 +4,17 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus } from "lucide-react";
 
 interface WordInputProps {
   onAddWords: (words: { arabic: string; translation: string }[]) => void;
   bulkInput: string;
   setBulkInput: (input: string) => void;
+  onGenerateWords: (difficulty: 'easy' | 'medium' | 'hard') => void;
 }
 
-export const WordInput: React.FC<WordInputProps> = ({ onAddWords, bulkInput, setBulkInput }) => {
+export const WordInput: React.FC<WordInputProps> = ({ onAddWords, bulkInput, setBulkInput, onGenerateWords }) => {
   const { toast } = useToast();
 
   const parseWords = (input: string) => {
@@ -75,9 +78,32 @@ World	عالم
 سيارة Car`}
         className="mb-2"
       />
-      <Button onClick={handleAddBulk} className="w-full">
-        إضافة الكلمات
-      </Button>
+
+      <div className="flex items-center space-x-4">
+        <Button onClick={handleAddBulk} className="w-full">
+          إضافة الكلمات
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              توليد كلمات
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuItem onClick={() => onGenerateWords('easy')}>
+              سهلة
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onGenerateWords('medium')}>
+              متوسط
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onGenerateWords('hard')}>
+              صعبة
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };

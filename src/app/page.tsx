@@ -130,32 +130,12 @@ export default function Home() {
               <TabsTrigger value="review">مراجعة الكلمات</TabsTrigger>
             </TabsList>
             <TabsContent value="add" className="mt-5">
-            <div className="flex items-center space-x-4">
                 <WordInput
                   onAddWords={handleAddWords}
                   bulkInput={bulkInput} // Pass bulkInput to WordInput
                   setBulkInput={setBulkInput} // Pass setBulkInput to WordInput
+                  onGenerateWords={handleGenerateWords}
                 />
-                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
-                      <Plus className="mr-2 h-4 w-4" />
-                      توليد كلمات
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56">
-                    <DropdownMenuItem onClick={() => handleGenerateWords('easy')}>
-                      سهلة
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleGenerateWords('medium')}>
-                      متوسط
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleGenerateWords('hard')}>
-                      صعبة
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
             </TabsContent>
             <TabsContent value="review" className="mt-5">
               <FlashcardReview
