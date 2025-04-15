@@ -9,21 +9,14 @@ import { useRouter } from 'next/navigation';
 
 interface FlashcardReviewProps {
   words: { arabic: string; translation: string, id?: string }[];
-  hardWords: HardWord[];
   onToggleHardWord: (word: string, isHard: boolean) => void;
 }
 
-interface HardWord {
-  arabic: string;
-  translation: string;
-}
-
-export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWords, onToggleHardWord }) => {
+export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggleHardWord }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [showTranslation, setShowTranslation] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-
 
   const currentWord = words[currentWordIndex];
 
@@ -107,7 +100,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWor
     <div className="flex flex-col items-center">
       <Card className="glass-card p-6 w-full max-w-md mb-4">
         <div className="text-4xl font-bold text-center mb-2">
-          {currentWord?.english}
+          {currentWord?.translation}
         </div>
         {showTranslation && (
           <div className="text-gray-500 text-center">
@@ -138,3 +131,4 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWor
     </div>
   );
 };
+
