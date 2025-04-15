@@ -81,7 +81,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
     });
     setReviewCompleted(true);
     // Navigate to hard words page
-    router.push('/hard-words');
+    // router.push('/hard-words');
   };
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
           }}>
             المراجعة مرة أخرى
           </Button>
-          <Button variant="secondary" onClick={handleReviewComplete}>
+          <Button variant="secondary" onClick={() => router.push('/hard-words')}>
             الذهاب إلى الكلمات الصعبة
           </Button>
         </div>
