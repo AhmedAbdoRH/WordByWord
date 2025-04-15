@@ -131,4 +131,3 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
     </div>
   );
 };
-
