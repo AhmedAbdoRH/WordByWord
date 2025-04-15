@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
 interface FlashcardReviewProps {
   words: { arabic: string; translation: string, id?: string }[];
+  hardWords: HardWord[];
+  onToggleHardWord: (word: string, isHard: boolean) => void;
 }
 
 interface HardWord {
@@ -15,25 +18,11 @@ interface HardWord {
   translation: string;
 }
 
-export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
+export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWords, onToggleHardWord }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [showTranslation, setShowTranslation] = useState(false);
   const { toast } = useToast();
-  const [hardWords, setHardWords] = useState<HardWord[]>([]);
-
-
-  useEffect(() => {
-    // Load hard words from local storage on initial render
-    const storedHardWords = localStorage.getItem('hardWords');
-    if (storedHardWords) {
-      setHardWords(JSON.parse(storedHardWords));
-    }
-  }, []);
-
-  useEffect(() => {
-    // Update local storage whenever hardWords changes
-    localStorage.setItem('hardWords', JSON.stringify(hardWords));
-  }, [hardWords]);
+  const router = useRouter();
 
 
   const currentWord = words[currentWordIndex];
@@ -47,6 +36,8 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
   }, [words, words.length]);
 
   const handleNextWord = useCallback(() => {
+    if (words.length === 0) return;
+
     setCurrentWordIndex((prevIndex) => {
       const newIndex = (prevIndex + 1) % words.length;
       return newIndex;
@@ -61,7 +52,11 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
         title: "الرجاء إضافة بعض الكلمات أولاً.",
       });
     }
-  }, [words, toast]);
+    // If all words are reviewed, redirect to hard words page
+    if (words.length > 0 && currentWordIndex >= words.length) {
+      router.push('/hard-words');
+    }
+  }, [words, toast, currentWordIndex, router]);
 
   const handleToggleTranslation = () => {
     setShowTranslation((prev) => !prev);
@@ -69,26 +64,43 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
 
   const handleMarkEasy = () => {
     if (currentWord) {
-      setHardWords(prevHardWords => {
-        const newHardWords = prevHardWords.filter(word => word.arabic !== currentWord.arabic);
-        return newHardWords;
-      });
+      onToggleHardWord(currentWord.translation, false);
       handleNextWord();
     }
   };
 
   const handleMarkHard = () => {
     if (currentWord) {
-      setHardWords(prevHardWords => {
-        const newHardWords = [...prevHardWords, { arabic: currentWord.arabic, translation: currentWord.translation }];
-        return newHardWords;
-      });
+      onToggleHardWord(currentWord.translation, true);
       handleNextWord();
     }
   };
 
+  const handleReviewComplete = () => {
+    // Navigate to hard words page
+    router.push('/hard-words');
+  };
+
   if (words.length === 0) {
     return <div className="text-center">الرجاء إضافة بعض الكلمات أولاً.</div>;
+  }
+
+  if (currentWordIndex >= words.length) {
+    return (
+      <div className="flex flex-col items-center">
+        <div className="text-center text-lg mb-4">
+          تمت مراجعة جميع الكلمات!
+        </div>
+        <div className="flex justify-center space-x-4">
+          <Button onClick={() => { setCurrentWordIndex(0); router.push('/') }}>
+            العودة إلى صفحة الإدخال
+          </Button>
+          <Button variant="secondary" onClick={() => { setCurrentWordIndex(0); }}>
+            المراجعة مرة أخرى
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -108,7 +120,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
         <Button variant="secondary" onClick={handleToggleTranslation}>
           {showTranslation ? "إخفاء الكلمة العربية" : "إظهار الكلمة العربية"}
         </Button>
-         <Button onClick={handlePreviousWord}>الكلمة السابقة</Button>
+        <Button onClick={handlePreviousWord}>الكلمة السابقة</Button>
       </div>
 
       <div className="flex justify-center space-x-4">
