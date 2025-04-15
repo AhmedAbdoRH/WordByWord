@@ -3,9 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WordInput } from "@/components/word-input";
-import { FlashcardReview } from "@/components/flashcard-review";
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, query, where } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { SignIn } from "@/components/sign-in";
 import { SignUp } from "@/components/sign-up";
@@ -14,6 +13,8 @@ import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { generateWords } from "@/ai/flows/generate-words-flow";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus } from "lucide-react";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -34,6 +35,8 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const [generatedWords, setGeneratedWords] = useState<{ english: string; arabic: string }[]>([]);
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+  const [bulkInput, setBulkInput] = useState(""); // Added state for word input
+
 
   useEffect(() => {
     // Initialize Firebase and Firestore only on the client side
@@ -99,10 +102,13 @@ export default function Home() {
       return newHardWords;
     });
   };
-
-  const handleGenerateWords = async () => {
-    const newGeneratedWords = await generateWords({ difficulty });
-    setGeneratedWords(newGeneratedWords);
+  const handleGenerateWords = async (selectedDifficulty: 'easy' | 'medium' | 'hard') => {
+    setDifficulty(selectedDifficulty);
+    const newGeneratedWords = await generateWords({ difficulty: selectedDifficulty });
+    // Format generated words into bulk input format
+    const formattedWords = newGeneratedWords.map(word => `${word.english} : ${word.arabic}`).join('\n');
+    // Append generated words to the bulk input
+    setBulkInput(prevBulkInput => prevBulkInput + '\n' + formattedWords);
   };
 
   if (authLoading) {
@@ -123,32 +129,31 @@ export default function Home() {
               <TabsTrigger value="review">مراجعة الكلمات</TabsTrigger>
             </TabsList>
             <TabsContent value="add" className="mt-5">
-              <WordInput onAddWords={handleAddWords} />
-              <div className="mt-4 glass-card p-4">
-                <h2 className="text-lg font-semibold mb-2">Generate Words</h2>
-                <div className="flex items-center space-x-4 mb-2">
-                  <Select onValueChange={(value) => setDifficulty(value as 'easy' | 'medium' | 'hard')}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select difficulty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="easy">Easy</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="hard">Hard</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleGenerateWords}>Generate Words</Button>
-                </div>
-                {generatedWords.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="text-md font-semibold mb-2">Generated Words:</h3>
-                    <ul>
-                      {generatedWords.map((word, index) => (
-                        <li key={index}>{word.english} : {word.arabic}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+            <div className="flex items-center space-x-4">
+                <WordInput
+                  onAddWords={handleAddWords}
+                  bulkInput={bulkInput} // Pass bulkInput to WordInput
+                  setBulkInput={setBulkInput} // Pass setBulkInput to WordInput
+                />
+                 <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      <Plus className="mr-2 h-4 w-4" />
+                      توليد كلمات
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuItem onClick={() => handleGenerateWords('easy')}>
+                      سهلة
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleGenerateWords('medium')}>
+                      متوسط
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleGenerateWords('hard')}>
+                      صعبة
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </TabsContent>
             <TabsContent value="review" className="mt-5">

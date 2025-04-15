@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -8,10 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 
 interface WordInputProps {
   onAddWords: (words: { arabic: string; translation: string }[]) => void;
+  bulkInput: string;
+  setBulkInput: (input: string) => void;
 }
 
-export const WordInput: React.FC<WordInputProps> = ({ onAddWords }) => {
-  const [bulkInput, setBulkInput] = useState("");
+export const WordInput: React.FC<WordInputProps> = ({ onAddWords, bulkInput, setBulkInput }) => {
   const { toast } = useToast();
 
   const parseWords = (input: string) => {
@@ -81,5 +81,3 @@ World	عالم
     </div>
   );
 };
-
-    

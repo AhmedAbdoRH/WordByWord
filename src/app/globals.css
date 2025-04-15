@@ -11,76 +11,41 @@ body {
 
 @layer base {
   :root {
-    --background: #0a0f1a;
-    --foreground: #e5e7eb;
-    --card: transparent;
-    --card-foreground: #e5e7eb;
-    --popover: #151c2a;
-    --popover-foreground: #e5e7eb;
-    --primary: #b91c1c;
-    --primary-foreground: #e5e7eb;
-    --secondary: #3e4859;
-    --secondary-foreground: #e5e7eb;
-    --muted: #2a3447;
-    --muted-foreground: #9ca3af;
-    --accent: #3b82f6;
-    --accent-foreground: #e5e7eb;
-    --destructive: #b91c1c;
-    --destructive-foreground: #e5e7eb;
-    --border: #2a3447;
-    --input: #151c2a;
-    --ring: #3b82f6;
+    --background: 0 0% 10%;
+    --foreground: 0 0% 90%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 350 89.7% 46.1%;
+    --primary-foreground: 0 0% 90%;
+    --secondary: 210 22.9% 30.8%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 210 22.9% 30.8%;
+    --muted-foreground: 210 10% 50%;
+    --accent: 217.2 91.2% 59.8%;
+    --accent-foreground: 0 0% 90%;
+    --destructive: 350 89.7% 46.1%;
+    --destructive-foreground: 0 0% 90%;
+    --border: 210 22.9% 30.8%;
+    --input: 0 0% 10%;
+    --ring: 217.2 91.2% 59.8%;
     --radius: 0.75rem;
     --gradient-navy-base: 210, 65%, 12%;
     --gradient-orange-base: 16, 100%, 50%;
     --gradient-navy-alpha-40: hsla(var(--gradient-navy-base), 0.4);
     --gradient-orange-alpha-15: hsla(var(--gradient-orange-base), 0.15);
     --gradient-orange: hsl(var(--gradient-orange-base));
-    --sidebar-background: #151c2a;
-    --sidebar-foreground: #e5e7eb;
-    --sidebar-primary: #b91c1c;
-    --sidebar-primary-foreground: #e5e7eb;
-    --sidebar-accent: #3b82f6;
-    --sidebar-accent-foreground: #e5e7eb;
-    --sidebar-border: #2a3447;
-    --sidebar-ring: #3b82f6;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 350 89.7% 46.1%;
+    --sidebar-primary-foreground: 0 0% 90%;
+    --sidebar-accent: 217.2 91.2% 59.8%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 210 22.9% 30.8%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  .dark {
-    --background: #0a0f1a;
-    --foreground: #e5e7eb;
-    --card: transparent;
-    --card-foreground: #e5e7eb;
-    --popover: #151c2a;
-    --popover-foreground: #e5e7eb;
-    --primary: #b91c1c;
-    --primary-foreground: #e5e7eb;
-    --secondary: #3e4859;
-    --secondary-foreground: #e5e7eb;
-    --muted: #2a3447;
-    --muted-foreground: #9ca3af;
-    --accent: #3b82f6;
-    --accent-foreground: #e5e7eb;
-    --destructive: #b91c1c;
-    --destructive-foreground: #e5e7eb;
-    --border: #2a3447;
-    --input: #151c2a;
-    --ring: #3b82f6;
-    --radius: 0.75rem;
-    --gradient-navy-base: 210, 65%, 12%;
-    --gradient-orange-base: 16, 100%, 50%;
-    --gradient-navy-alpha-40: hsla(var(--gradient-navy-base), 0.4);
-    --gradient-orange-alpha-15: hsla(var(--gradient-orange-base), 0.15);
-    --gradient-orange: hsl(var(--gradient-orange-base));
-    --sidebar-background: #151c2a;
-    --sidebar-foreground: #e5e7eb;
-    --sidebar-primary: #b91c1c;
-    --sidebar-primary-foreground: #e5e7eb;
-    --sidebar-accent: #3b82f6;
-    --sidebar-accent-foreground: #e5e7eb;
-    --sidebar-border: #2a3447;
-    --sidebar-ring: #3b82f6;
-  }
 }
 
 @layer base {
@@ -98,7 +63,7 @@ body {
   border-radius: var(--radius);
   transition: all 0.3s ease-in-out;
   text-align: center;
-  color: var(--text-light-primary);
+  color: var(--foreground);
   background-color: transparent;
   border: none;
   box-shadow: none;
