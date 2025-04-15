@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Card } from "@/components/ui/card";
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
-import { firebaseConfig } from "@/firebase/firebase-config";
+import { db } from "@/firebase/firebase-config";
 
 interface HardWord {
   arabic: string;
@@ -16,21 +16,22 @@ interface HardWord {
 
 const HardWordsPage = () => {
   const [hardWords, setHardWords] = useState<HardWord[]>([]);
-    const [db, setDb] = useState<any>(null);
+    //const [db, setDb] = useState<any>(null);
     const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
-        if (!firebaseConfig.apiKey) {
+        /*if (!firebaseConfig.apiKey) {
             console.error("Firebase configuration is missing. Ensure all NEXT_PUBLIC_FIREBASE_* environment variables are set.");
             return;
-        }
+        }*/
 
         try {
-            const app = initializeApp(firebaseConfig);
-            const firestore = getFirestore(app);
-            setDb(firestore);
+            //const app = initializeApp(firebaseConfig);
+            //const firestore = getFirestore(app);
+            //setDb(firestore);
+            const firestore = db;
             setWordsCollectionRef(collection(firestore, "words"));
         } catch (error) {
             console.error("Error initializing Firebase:", error);
@@ -46,7 +47,7 @@ const HardWordsPage = () => {
             //setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
             const allWords = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
             // Filter out "easy" words here by checking if they exist in localStorage
-            const filteredWords = allWords.filter((word) => {
+            /*const filteredWords = allWords.filter((word) => {
                 const storedHardWords = localStorage.getItem('hardWords');
                 if (!storedHardWords) return false; //If no hard words exists all are hard words
 
@@ -54,10 +55,10 @@ const HardWordsPage = () => {
                 const found = hardWordsArray.some((hw: HardWord) => hw.arabic === word.arabic && hw.translation === word.translation);
 
                 return found;
-            });
+            });*/
 
 
-            setHardWords(filteredWords);
+            setHardWords(allWords);
         } catch (error) {
             console.error("Error fetching words:", error);
             // Optionally set an error state to display an error message to the user
