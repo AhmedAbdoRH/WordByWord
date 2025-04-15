@@ -4,18 +4,32 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Check, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 interface FlashcardReviewProps {
   words: { arabic: string; translation: string, id?: string }[];
-  hardWords: Set<string>;
-  onToggleHardWord: (word: string, isHard: boolean) => void;
 }
 
-export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWords, onToggleHardWord }) => {
+export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [showTranslation, setShowTranslation] = useState(false);
   const { toast } = useToast();
+  const [hardWords, setHardWords] = useState<Set<string>>(new Set());
+
+
+  useEffect(() => {
+    // Load hard words from local storage on initial render
+    const storedHardWords = localStorage.getItem('hardWords');
+    if (storedHardWords) {
+      setHardWords(new Set(JSON.parse(storedHardWords)));
+    }
+  }, []);
+
+  useEffect(() => {
+    // Update local storage whenever hardWords changes
+    localStorage.setItem('hardWords', JSON.stringify(Array.from(hardWords)));
+  }, [hardWords]);
+
 
   const currentWord = words[currentWordIndex];
 
@@ -38,24 +52,24 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWor
 
   const handleMarkEasy = () => {
     if (currentWord) {
-      onToggleHardWord(currentWord.arabic, false);
+      setHardWords(prevHardWords => {
+        const newHardWords = new Set(prevHardWords);
+        newHardWords.delete(currentWord.arabic);
+        return newHardWords;
+      });
       handleNextWord();
     }
   };
 
   const handleMarkHard = () => {
     if (currentWord) {
-      onToggleHardWord(currentWord.arabic, true);
+      setHardWords(prevHardWords => {
+        const newHardWords = new Set(prevHardWords);
+        newHardWords.add(currentWord.arabic);
+        return newHardWords;
+      });
       handleNextWord();
     }
-  };
-
-  const handleCopyToClipboard = () => {
-    const hardWordsArray = Array.from(hardWords);
-    navigator.clipboard.writeText(hardWordsArray.join("\n"));
-    toast({
-      title: "تم نسخ الكلمات الصعبة إلى الحافظة!",
-    });
   };
 
   if (words.length === 0) {
@@ -93,12 +107,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, hardWor
         </Button>
       </div>
 
-      <div className="mt-4">
-        <Button variant="outline" onClick={handleCopyToClipboard}>
-          <Copy className="w-4 h-4 ml-2" />
-          نسخ الكلمات الصعبة
-        </Button>
-      </div>
+
     </div>
   );
 };
