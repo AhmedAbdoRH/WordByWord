@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-provider";
 import { Card } from "@/components/ui/card";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
+import { firebaseConfig } from "@/firebase/firebase-config";
 
 interface HardWord {
   arabic: string;
@@ -13,15 +16,60 @@ interface HardWord {
 
 const HardWordsPage = () => {
   const [hardWords, setHardWords] = useState<HardWord[]>([]);
+    const [db, setDb] = useState<any>(null);
+    const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Retrieve hard words from localStorage on component mount
-    const storedHardWords = localStorage.getItem('hardWords');
-    if (storedHardWords) {
-      setHardWords(JSON.parse(storedHardWords));
-    }
-  }, []);
+        if (!firebaseConfig.apiKey) {
+            console.error("Firebase configuration is missing. Ensure all NEXT_PUBLIC_FIREBASE_* environment variables are set.");
+            return;
+        }
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const firestore = getFirestore(app);
+            setDb(firestore);
+            setWordsCollectionRef(collection(firestore, "words"));
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+        }
+    }, []);
+
+    const getWords = useCallback(async () => {
+        if (!wordsCollectionRef || !user) return;
+
+        try {
+            const q = query(wordsCollectionRef, where("uid", "==", user.uid));
+            const data = await getDocs(q);
+            //setWords(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+            const allWords = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+            // Filter out "easy" words here by checking if they exist in localStorage
+            const filteredWords = allWords.filter((word) => {
+                const storedHardWords = localStorage.getItem('hardWords');
+                if (!storedHardWords) return false; //If no hard words exists all are hard words
+
+                const hardWordsArray = JSON.parse(storedHardWords);
+                const found = hardWordsArray.some((hw: HardWord) => hw.arabic === word.arabic && hw.translation === word.translation);
+
+                return found;
+            });
+
+
+            setHardWords(filteredWords);
+        } catch (error) {
+            console.error("Error fetching words:", error);
+            // Optionally set an error state to display an error message to the user
+        }
+    }, [wordsCollectionRef, user]);
+
+
+    useEffect(() => {
+        if (wordsCollectionRef && user) {
+            getWords();
+        }
+    }, [wordsCollectionRef, getWords, user]);
 
   const handleCopyToClipboard = () => {
     const textToCopy = hardWords.map(word => `${word.arabic}: ${word.translation}`).join("\n");
