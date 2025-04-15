@@ -61,4 +61,3 @@ const HardWordsPage = () => {
 };
 
 export default HardWordsPage;
-
