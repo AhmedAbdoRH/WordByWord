@@ -27,16 +27,22 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+type WordType = {
+  arabic: string;
+  translation: string;
+  id?: string;
+};
+
 export default function Home() {
-  const [words, setWords<{ arabic: string; translation: string; id?: string }[]>([]);
+  const [words, setWords] = useState<WordType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [db, setDb<any>(null);
-  const [wordsCollectionRef, setWordsCollectionRef<any>(null);
+  const [db, setDb] = useState<any>(null);
+  const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
-  const [generatedWords, setGeneratedWords<{ english: string; arabic: string }[]>([]);
-  const [difficulty, setDifficulty<"easy" | "medium" | "hard">("easy");
-  const [bulkInput, setBulkInput](useState("")); // Added state for word input
-  const [hardWords, setHardWords](useState<{ arabic: string; translation: string; id?: string }[]>[]);
+  const [generatedWords, setGeneratedWords] = useState<{ english: string; arabic: string }[]>([]);
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+  const [bulkInput, setBulkInput] = useState(""); // Added state for word input
+  const [hardWords, setHardWords] = useState<WordType[]>([]);
 
   useEffect(() => {
     // Initialize Firebase and Firestore only on the client side
@@ -131,7 +137,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold text-center mb-5">كلماتي</h1>
+      <h1 className="text-2xl font-bold text-center mb-5">تطبيق كلماتي</h1>
       {user ? (
         <>
           <div className="flex justify-end mb-4">
@@ -151,10 +157,10 @@ export default function Home() {
             </TabsContent>
           </Tabs>
            <div className="flex flex-col items-center mt-4">
-                <FlashcardReview
+                {/* <FlashcardReview
                     words={words}
                     onToggleHardWord={handleToggleHardWord}
-                />
+                /> */}
                 <div className="flex justify-center mt-4">
                     <Link href="/hard-words" className="bg-secondary text-secondary-foreground p-2 rounded-md">
                         عرض الكلمات الصعبة
