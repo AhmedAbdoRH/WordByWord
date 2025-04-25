@@ -243,7 +243,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
 
         <div className="flex justify-between items-center space-x-4 rtl:space-x-reverse mb-4 w-full max-w-md">
-          {/* Left side buttons (Previous and Show/Hide) - Now on the left */}
+          {/* Left side buttons (Previous and Show/Hide) */}
           <div className="flex space-x-2 rtl:space-x-reverse">
              <Button onClick={handlePreviousWord} disabled={currentWordIndex === 0 || isDelaying} size="icon" variant="outline">
                <ArrowLeft className="w-5 h-5" /> {/* Use ArrowLeft icon */}
@@ -254,15 +254,17 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
             </Button>
         </div>
 
-        {/* Right side buttons (Easy and Hard) - Now on the right */}
-         <div className="flex space-x-2 rtl:space-x-reverse">
-            <Button variant="success" onClick={handleMarkEasy} disabled={isDelaying} className="px-6 py-3">
-                <Check className="w-5 h-5 mr-2 rtl:ml-2" /> {/* Adjust icon margin for RTL */}
-                سهلة
-            </Button>
+        {/* Right side buttons (Easy and Hard) - Centered */}
+         <div className="flex justify-center space-x-2 rtl:space-x-reverse flex-1"> {/* Added justify-center and flex-1 */}
+            {/* Hard Button (appears on the right in RTL) */}
             <Button variant="destructive" onClick={handleMarkHard} disabled={isDelaying} className="px-6 py-3">
                 <X className="w-5 h-5 mr-2 rtl:ml-2" /> {/* Adjust icon margin for RTL */}
                 صعبة
+            </Button>
+             {/* Easy Button (appears on the left in RTL) */}
+            <Button variant="success" onClick={handleMarkEasy} disabled={isDelaying} className="px-6 py-3">
+                <Check className="w-5 h-5 mr-2 rtl:ml-2" /> {/* Adjust icon margin for RTL */}
+                سهلة
             </Button>
         </div>
 
@@ -271,5 +273,3 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
     </div>
   );
 };
-
-    
