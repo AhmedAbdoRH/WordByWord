@@ -114,17 +114,7 @@ export default function Home() {
         difficulty: isHard ? 'hard' : 'easy'
       });
       console.log(`Word ${wordId} marked as ${isHard ? 'hard' : 'easy'}`);
-
-      // Update local state optimistically ONLY IF NEEDED for immediate UI feedback
-      // setWords(prevWords => prevWords.map(w => w.id === wordId ? { ...w, difficulty: isHard ? 'hard' : 'easy' } : w));
-      // setHardWords(prevHardWords => {
-      //     const word = words.find(w => w.id === wordId);
-      //     if (!word) return prevHardWords; // Should not happen
-      //     return isHard
-      //         ? [...prevHardWords.filter(hw => hw.id !== wordId), { ...word, difficulty: 'hard' }] // Add/update
-      //         : prevHardWords.filter(hw => hw.id !== wordId); // Remove
-      // });
-      // Relying on getWords for consistency after review completion is generally better
+      // No need for optimistic update here, rely on getWords after review complete
 
     } catch (error) {
       console.error("Error updating word difficulty in Firestore:", error);
@@ -133,7 +123,8 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  }, [user, toast]); // Removed db, words, setWords, setHardWords
+  }, [user, toast]); // Removed db dependency
+
 
   const handleGenerateWords = async (selectedDifficulty: 'easy' | 'medium' | 'hard') => {
     setLoading(true);
@@ -177,18 +168,19 @@ export default function Home() {
 
   const handleReviewComplete = useCallback(async (easyWordIds: string[]) => {
     if (!db || !user) return;
-    console.log("Review complete. Deleting easy words:", easyWordIds);
+    console.log("Review complete. Marking easy words for deletion:", easyWordIds);
     setLoading(true);
     try {
       const batch = [];
       for (const wordId of easyWordIds) {
         const wordRef = doc(db, "words", wordId);
-        batch.push(deleteDoc(wordRef));
+        batch.push(deleteDoc(wordRef)); // Changed to delete directly
       }
-      await Promise.all(batch); // Delete easy words in parallel
-      await getWords(); // Refresh words list after deletion
-      // Navigate to hard words page after successful deletion
-      router.push('/hard-words');
+      await Promise.all(batch);
+      console.log(`Successfully deleted ${easyWordIds.length} easy words.`);
+      await getWords(); // Refresh words list after modification
+      // Do not navigate automatically anymore
+      // router.push('/hard-words');
     } catch (error) {
       console.error("Error deleting easy words:", error);
       toast({
@@ -198,7 +190,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [user, getWords, router, toast]); // Removed db
+  }, [user, getWords, toast]); // Removed db, router dependencies
 
 
   if (authLoading) {
@@ -257,6 +249,7 @@ export default function Home() {
                   words={words.filter(w => !!w.id && !!w.english && !!w.arabic)} // Ensure words have necessary fields
                   onToggleHardWord={handleToggleHardWord}
                   onReviewComplete={handleReviewComplete}
+                  loading={loading} // Pass loading state
                 />
               )}
               {activeTab === 'review' && loading && (
@@ -293,9 +286,21 @@ export default function Home() {
           )}
         </>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
-          <SignIn />
-          <SignUp />
+         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+          <Card className="glass-card w-full max-w-md p-6 mb-6">
+            <CardHeader>
+              <CardTitle className="text-center text-2xl font-bold">مرحباً بك في كلماتي</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-muted-foreground mb-6">
+                سجل الدخول أو أنشئ حسابًا جديدًا للبدء في تعلم المفردات.
+              </p>
+              <div className="grid grid-cols-1 gap-4">
+                <SignIn />
+                <SignUp />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
