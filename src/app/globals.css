@@ -23,6 +23,8 @@ body {
     --secondary-foreground: 0 0% 90%;
     --muted: 210 22.9% 30.8%;
     --muted-foreground: 210 10% 50%;
+    --success: 142.1 76.2% 36.3%; /* Shadcn Green */
+    --success-foreground: 210 40% 98%; /* Light foreground for green */
     --accent: 217.2 91.2% 59.8%;
     --accent-foreground: 0 0% 90%;
     --destructive: 350 89.7% 46.1%;
@@ -46,6 +48,43 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  .dark {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 90%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 350 89.7% 46.1%;
+    --primary-foreground: 0 0% 90%;
+    --secondary: 210 22.9% 30.8%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 210 22.9% 30.8%;
+    --muted-foreground: 210 10% 50%;
+    --success: 142.1 76.2% 36.3%; /* Shadcn Green */
+    --success-foreground: 210 40% 98%; /* Light foreground for green */
+    --accent: 217.2 91.2% 59.8%;
+    --accent-foreground: 0 0% 90%;
+    --destructive: 350 89.7% 46.1%;
+    --destructive-foreground: 0 0% 90%;
+    --border: 210 22.9% 30.8%;
+    --input: 0 0% 10%;
+    --ring: 217.2 91.2% 59.8%;
+    --radius: 0.75rem;
+    --gradient-navy-base: 210, 65%, 12%;
+    --gradient-orange-base: 16, 100%, 50%;
+    --gradient-navy-alpha-40: hsla(var(--gradient-navy-base), 0.4);
+    --gradient-orange-alpha-15: hsla(var(--gradient-orange-base), 0.15);
+    --gradient-orange: hsl(var(--gradient-orange-base));
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 350 89.7% 46.1%;
+    --sidebar-primary-foreground: 0 0% 90%;
+    --sidebar-accent: 217.2 91.2% 59.8%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 210 22.9% 30.8%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 }
 
 @layer base {
@@ -55,6 +94,11 @@ body {
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Ensure dark mode is always applied */
+  html, body {
+     @apply dark;
   }
 }
 
@@ -112,9 +156,7 @@ body {
 }
 
 .bottom-nav-button {
-  position: fixed;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Removed fixed positioning */
+  margin-top: 1rem; /* Add some margin if needed */
   z-index: 50;
 }
