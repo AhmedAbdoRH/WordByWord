@@ -1,17 +1,17 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X } from "lucide-react";
+import { Check, X, ArrowLeft } from "lucide-react"; // Import ArrowLeft
 import { useRouter } from 'next/navigation';
 import { Progress } from "@/components/ui/progress";
 
 interface Word {
   arabic: string;
   english: string;
-  translation: string;
   id: string; // ID is mandatory here
   uid?: string;
   difficulty?: 'easy' | 'hard'; // Optional difficulty marker
@@ -19,13 +19,14 @@ interface Word {
 
 
 interface FlashcardReviewProps {
-  words: Word[]; // Expect words with IDs
+  words: Word[]; // Expect words with IDs, english, and arabic
   onToggleHardWord: (wordId: string, isHard: boolean) => void;
   onReviewComplete: (easyWordIds: string[]) => void; // Callback when review finishes
+  loading: boolean; // Add loading prop
 }
 
 
-export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggleHardWord, onReviewComplete }) => {
+export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggleHardWord, onReviewComplete, loading }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [showTranslation, setShowTranslation] = useState(false);
   const { toast } = useToast();
@@ -35,51 +36,48 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   const [reviewedCount, setReviewedCount] = useState(0); // Count total words reviewed in this session
   const [reviewCompleted, setReviewCompleted] = useState(false); // Track if review is completed
 
-
-  // Reset state when words change (e.g., user logs out/in, words are added/deleted)
+  // Reset state when words change or loading finishes
   useEffect(() => {
-    setCurrentWordIndex(0);
-    setShowTranslation(false);
-    setEasyWordIds([]);
-    setHardWordCount(0);
-    setReviewedCount(0);
-    setReviewCompleted(false);
-  }, [words]);
+    if (!loading) { // Reset only when loading is complete
+        setCurrentWordIndex(0);
+        setShowTranslation(false);
+        setEasyWordIds([]);
+        setHardWordCount(0);
+        setReviewedCount(0);
+        setReviewCompleted(false);
+    }
+  }, [words, loading]); // Depend on words and loading
 
 
   // Get the current word based on the index
   const currentWord = words.length > 0 ? words[currentWordIndex] : null;
 
   const handlePreviousWord = useCallback(() => {
-     if (words.length === 0) return;
-    setCurrentWordIndex((prevIndex) => (prevIndex - 1 + words.length) % words.length);
+     if (words.length === 0 || currentWordIndex === 0) return; // Prevent going below 0
+    setCurrentWordIndex((prevIndex) => prevIndex - 1); // Simple decrement
     setShowTranslation(false);
-     setReviewedCount(prev => prev > 0 ? prev -1 : 0); // Decrement reviewed count cautiously
-  }, [words.length]);
+     // Don't decrement reviewedCount when going back, as it tracks forward progress
+  }, [words.length, currentWordIndex]);
 
 
- const handleNextWord = useCallback(() => {
-    if (words.length === 0) return;
-
+ const handleNextWordLogic = useCallback(() => {
     const nextIndex = currentWordIndex + 1;
-
     if (nextIndex >= words.length) {
-      // Last word reviewed, trigger completion
-      if (!reviewCompleted) { // Prevent multiple triggers
-         setReviewedCount(words.length); // Ensure count matches total
-         handleReviewComplete();
-      }
+        // Last word reviewed
+        if (!reviewCompleted) {
+            setReviewedCount(words.length); // Ensure count matches total
+            handleReviewComplete();
+        }
     } else {
-       setCurrentWordIndex(nextIndex);
-       setShowTranslation(false);
-       // Increment reviewed count only if moving forward after a mark
-       // The marking functions handle incrementing reviewedCount
+        setCurrentWordIndex(nextIndex);
+        setShowTranslation(false);
     }
-  }, [words.length, currentWordIndex, reviewCompleted]);
+ }, [currentWordIndex, words.length, reviewCompleted]);
 
 
+  // Effect to trigger completion check after reviewedCount updates
   useEffect(() => {
-    if (words.length > 0 && words.length === reviewedCount && !reviewCompleted) {
+    if (words.length > 0 && reviewedCount >= words.length && !reviewCompleted) {
        handleReviewComplete();
     }
   }, [reviewedCount, words.length, reviewCompleted]);
@@ -96,7 +94,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
       }
       onToggleHardWord(currentWord.id, false); // Mark as easy (for potential deletion later)
       setReviewedCount(prev => prev + 1); // Increment reviewed count
-      handleNextWord(); // Move to the next word
+      handleNextWordLogic(); // Move to the next word or complete
     }
   };
 
@@ -106,13 +104,13 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
       setHardWordCount(prevCount => prevCount + 1);
       onToggleHardWord(currentWord.id, true); // Mark as hard
       setReviewedCount(prev => prev + 1); // Increment reviewed count
-      handleNextWord(); // Move to the next word
+      handleNextWordLogic(); // Move to the next word or complete
     }
   };
 
   const handleReviewComplete = () => {
     console.log("Calling onReviewComplete with easy IDs:", easyWordIds);
-    onReviewComplete(easyWordIds);
+    onReviewComplete(easyWordIds); // Pass easy IDs for deletion
     setReviewCompleted(true);
     // Do not automatically navigate
     // router.push('/hard-words');
@@ -122,37 +120,38 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
   const progress = words.length > 0 ? (reviewedCount / words.length) * 100 : 0;
 
-  if (loading && !currentWord) {
+  if (loading) { // Use the loading prop
     return <div className="text-center">تحميل الكلمات...</div>;
   }
 
 
   if (words.length === 0 && !loading) {
-    return <div className="text-center">لا توجد كلمات للمراجعة. الرجاء إضافة بعض الكلمات أولاً.</div>;
+    return <div className="text-center mt-10">لا توجد كلمات للمراجعة. الرجاء إضافة بعض الكلمات أولاً.</div>;
   }
 
   if (reviewCompleted) {
     return (
-      <div className="flex flex-col items-center space-y-4">
-        <div className="text-center text-lg">
-          تمت مراجعة جميع الكلمات!
+      <div className="flex flex-col items-center space-y-4 mt-10">
+        <div className="text-center text-lg font-semibold">
+          🎉 تمت مراجعة جميع الكلمات! 🎉
         </div>
-        <div className="flex justify-center space-x-4">
+        <p className="text-muted-foreground text-sm">تم تصنيف {easyWordIds.length} كلمة كـ "سهلة" وسيتم حذفها.</p>
+        <p className="text-muted-foreground text-sm">تم تصنيف {hardWordCount} كلمة كـ "صعبة" في هذه الجلسة.</p>
+        <div className="flex justify-center space-x-4 rtl:space-x-reverse mt-4">
           <Button onClick={() => {
-            // Reset state for a new review session if needed, or navigate
+            // Reset state for a new review session
             setCurrentWordIndex(0);
             setReviewedCount(0);
             setHardWordCount(0);
             setEasyWordIds([]);
             setReviewCompleted(false);
-            // Optionally navigate back or provide other options
+            setShowTranslation(false);
           }}>
             المراجعة مرة أخرى
           </Button>
           <Button variant="secondary" onClick={() => router.push('/hard-words')}>
              الذهاب إلى الكلمات الصعبة
           </Button>
-          {/* Consider adding a button to go back to the add words tab */}
         </div>
       </div>
     );
@@ -160,10 +159,9 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
 
    // Added loading state check
-  if (!currentWord) {
-     // This case should ideally be covered by the loading or empty state checks
-     // but added as a safeguard.
-    return <div className="text-center">جاري تحميل الكلمة...</div>;
+  if (!currentWord && !loading) {
+     // Should be covered by loading or empty state, but as a safeguard.
+    return <div className="text-center mt-10">جاري تحميل الكلمة...</div>;
   }
 
 
@@ -171,54 +169,59 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
     <div className="flex flex-col items-center">
 
       <div className="mb-4 w-full max-w-md">
-        <div className="flex justify-between text-sm text-muted-foreground">
+        <div className="flex justify-between text-sm text-muted-foreground mb-1">
           <span>التقدم:</span>
           <span>{reviewedCount} / {words.length}</span>
         </div>
         <Progress value={progress} className="h-2" />
-        <div className="flex justify-between text-sm text-muted-foreground mt-1">
-          <span>الكلمات الصعبة (الجلسة الحالية):</span>
-          <span>{hardWordCount}</span>
-          <span>الكلمات التي تمت مراجعتها:</span>
-          <span>{reviewedCount}</span>
+        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+           <span>صعبة (الجلسة): {hardWordCount}</span>
+           <span>سهلة (الجلسة): {easyWordIds.length}</span>
+           <span>متبقي: {words.length - reviewedCount}</span>
         </div>
       </div>
 
-      <Card className="glass-card p-6 w-full max-w-md mb-4 min-h-[10rem] flex flex-col justify-center">
+        <Card className="glass-card p-6 w-full max-w-md mb-4 min-h-[12rem] flex flex-col justify-center items-center">
          {/* Display English word */}
-        <div className="text-4xl font-bold text-center mb-2">
-          {currentWord?.english || '...'} {/* Show English word */}
+        <div className="text-4xl lg:text-5xl font-bold text-center mb-2 break-words w-full px-2">
+          {currentWord?.english || '...'}
         </div>
         {showTranslation && (
            // Display Arabic translation when shown
-          <div className="text-gray-500 text-center mt-2">
-            {currentWord?.arabic || '...'} {/* Show Arabic translation */}
+          <div className="text-xl text-gray-400 text-center mt-2 break-words w-full px-2">
+            {currentWord?.arabic || '...'}
           </div>
         )}
       </Card>
 
 
-      <div className="flex justify-center space-x-4 rtl:space-x-reverse mb-4 w-full max-w-md">
-         {/* Left side buttons (Previous and Show/Hide) */}
+        <div className="flex justify-between items-center space-x-4 rtl:space-x-reverse mb-4 w-full max-w-md">
+         {/* Left side buttons (Easy and Hard) */}
          <div className="flex space-x-2 rtl:space-x-reverse">
-            <Button onClick={handlePreviousWord} disabled={currentWordIndex === 0 && reviewedCount <=1}>الكلمة السابقة</Button>
-            <Button variant="secondary" onClick={handleToggleTranslation}>
-            {showTranslation ? "إخفاء الترجمة" : "إظهار الترجمة"}
-            </Button>
-        </div>
-
-         {/* Right side buttons (Easy and Hard) */}
-         <div className="flex space-x-2 rtl:space-x-reverse">
-            <Button variant="success" onClick={handleMarkEasy}>
-                <Check className="w-4 h-4 ml-2" />
+            <Button variant="success" onClick={handleMarkEasy} className="px-6 py-3">
+                <Check className="w-5 h-5 ml-2" />
                 سهلة
             </Button>
-            <Button variant="destructive" onClick={handleMarkHard}>
-                <X className="w-4 h-4 ml-2" />
+            <Button variant="destructive" onClick={handleMarkHard} className="px-6 py-3">
+                <X className="w-5 h-5 ml-2" />
                 صعبة
             </Button>
         </div>
+
+         {/* Right side buttons (Previous and Show/Hide) */}
+         <div className="flex space-x-2 rtl:space-x-reverse">
+             <Button onClick={handlePreviousWord} disabled={currentWordIndex === 0} size="icon" variant="outline">
+               <ArrowLeft className="w-5 h-5" /> {/* Use ArrowLeft icon */}
+               <span className="sr-only">الكلمة السابقة</span> {/* Screen reader text */}
+             </Button>
+            <Button variant="secondary" onClick={handleToggleTranslation} className="px-4 py-3">
+            {showTranslation ? "إخفاء" : "إظهار"}
+            </Button>
+        </div>
+
       </div>
     </div>
   );
 };
+
+    
