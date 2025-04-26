@@ -135,7 +135,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
         setReviewedCount(prev => prev + 1); // Increment reviewed count *after* delay
         handleNextWordLogic(); // Move to the next word or complete
          hardButtonTimeoutRef.current = null; // Clear ref after execution
-      }, 3000); // 3000 milliseconds = 3 seconds
+      }, 1500); // 1500 milliseconds = 1.5 seconds
     }
   };
 
