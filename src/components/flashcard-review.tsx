@@ -139,14 +139,15 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
     }
   };
 
-  const handleReviewComplete = () => {
+  const handleReviewComplete = useCallback(() => {
+    if (reviewCompleted) return; // Prevent multiple calls
     console.log("Calling onReviewComplete with easy IDs:", easyWordIds);
     setReviewCompleted(true); // Mark review as completed first
     onReviewComplete(easyWordIds); // Pass easy IDs for deletion
     // Do not automatically navigate
     // router.push('/hard-words');
      toast({ title: "تمت مراجعة جميع الكلمات!" });
-  };
+  }, [reviewCompleted, onReviewComplete, easyWordIds, toast]); // Added dependencies
 
 
   const progress = words.length > 0 ? (reviewedCount / words.length) * 100 : 0;
@@ -267,9 +268,20 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
                 سهلة
             </Button>
         </div>
+      </div>
 
-
+      {/* End Session Button */}
+      <div className="mt-6 w-full max-w-md">
+         <Button
+           variant="outline"
+           onClick={handleReviewComplete}
+           className="w-full"
+           disabled={isDelaying} // Disable if waiting for "hard" delay
+         >
+           إنهاء الجلسة
+         </Button>
       </div>
     </div>
   );
 };
+
