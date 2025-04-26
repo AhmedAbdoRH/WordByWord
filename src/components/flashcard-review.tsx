@@ -5,24 +5,24 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, ArrowLeft, Loader2 } from "lucide-react"; // Import ArrowLeft
+import { Check, X, ArrowRight, Loader2 } from "lucide-react"; // Use ArrowRight for Previous Word in RTL
 import { useRouter } from 'next/navigation';
 import { Progress } from "@/components/ui/progress";
 
 interface Word {
   arabic: string;
   english: string;
-  id: string; // ID is mandatory here
+  id: string;
   uid?: string;
-  difficulty?: 'easy' | 'hard'; // Optional difficulty marker
+  difficulty?: 'easy' | 'hard';
 }
 
 
 interface FlashcardReviewProps {
-  words: Word[]; // Expect words with IDs, english, and arabic
+  words: Word[];
   onToggleHardWord: (wordId: string, isHard: boolean) => void;
-  onReviewComplete: (easyWordIds: string[]) => void; // Callback when review finishes
-  loading: boolean; // Add loading prop
+  onReviewComplete: (easyWordIds: string[]) => void;
+  loading: boolean;
 }
 
 
@@ -31,16 +31,15 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   const [showTranslation, setShowTranslation] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const [easyWordIds, setEasyWordIds] = useState<string[]>([]); // Store IDs of easy words
-  const [hardWordCount, setHardWordCount] = useState(0); // Count hard words marked in this session
-  const [reviewedCount, setReviewedCount] = useState(0); // Count total words reviewed in this session
-  const [reviewCompleted, setReviewCompleted] = useState(false); // Track if review is completed
-  const [isDelaying, setIsDelaying] = useState(false); // Track if we are in the 3-second delay
-  const hardButtonTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref to store the timeout ID
+  const [easyWordIds, setEasyWordIds] = useState<string[]>([]);
+  const [hardWordCount, setHardWordCount] = useState(0);
+  const [reviewedCount, setReviewedCount] = useState(0);
+  const [reviewCompleted, setReviewCompleted] = useState(false);
+  const [isDelaying, setIsDelaying] = useState(false);
+  const hardButtonTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset state when words change or loading finishes
   useEffect(() => {
-    if (!loading) { // Reset only when loading is complete
+    if (!loading) {
         setCurrentWordIndex(0);
         setShowTranslation(false);
         setEasyWordIds([]);
@@ -49,50 +48,61 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
         setReviewCompleted(false);
         setIsDelaying(false);
         if (hardButtonTimeoutRef.current) {
-          clearTimeout(hardButtonTimeoutRef.current); // Clear any existing timeout on reset
+          clearTimeout(hardButtonTimeoutRef.current);
           hardButtonTimeoutRef.current = null;
         }
     }
-    // Cleanup timeout on component unmount
     return () => {
         if (hardButtonTimeoutRef.current) {
             clearTimeout(hardButtonTimeoutRef.current);
         }
     };
-  }, [words, loading]); // Depend on words and loading
+  }, [words, loading]);
 
 
-  // Get the current word based on the index
   const currentWord = words.length > 0 ? words[currentWordIndex] : null;
 
   const handlePreviousWord = useCallback(() => {
-     if (words.length === 0 || currentWordIndex === 0 || isDelaying) return; // Prevent going below 0 or during delay
-    setCurrentWordIndex((prevIndex) => prevIndex - 1); // Simple decrement
+     if (words.length === 0 || currentWordIndex === 0 || isDelaying) return;
+    setCurrentWordIndex((prevIndex) => prevIndex - 1);
     setShowTranslation(false);
-     // Don't decrement reviewedCount when going back, as it tracks forward progress
+     // Decrement reviewed count only if we are going back from a word that was marked
+     // This logic might be complex, simpler to just track forward progress
+     // setReviewedCount(prev => Math.max(0, prev - 1)); // Avoid negative counts
   }, [words.length, currentWordIndex, isDelaying]);
 
 
  const handleNextWordLogic = useCallback(() => {
-    setIsDelaying(false); // End delay
+    setIsDelaying(false);
     const nextIndex = currentWordIndex + 1;
-    if (nextIndex >= words.length) {
-        // Last word reviewed
-        if (!reviewCompleted) {
-            // Ensure count matches total before completing
-             setReviewedCount(prev => Math.max(prev, words.length)); // Ensure count is at least words.length
-             handleReviewComplete(); // Call completion logic
+
+    // Only update reviewed count if moving forward
+    if (nextIndex > currentWordIndex) {
+         // Check if we are moving past the last word
+        if (nextIndex >= words.length) {
+             if (!reviewCompleted) {
+                 // Ensure count matches total before completing
+                 setReviewedCount(prev => Math.max(prev, words.length));
+                 handleReviewComplete(); // Call completion logic only when all words are done
+             }
+        } else {
+            setCurrentWordIndex(nextIndex);
+            setShowTranslation(false);
         }
     } else {
-        setCurrentWordIndex(nextIndex);
-        setShowTranslation(false);
+         // If somehow called without index increase (e.g., after delay), just end delay
+         setIsDelaying(false);
+         // Check completion status again in case delay finished on the last word
+         if (currentWordIndex >= words.length - 1 && !reviewCompleted) {
+             setReviewedCount(prev => Math.max(prev, words.length));
+             handleReviewComplete();
+         }
     }
+
  }, [currentWordIndex, words.length, reviewCompleted]); // Removed dependency on reviewedCount
 
-
-  // Effect to trigger completion check after reviewedCount updates
+  // Trigger completion check after reviewedCount updates or when moving past the last word
   useEffect(() => {
-    // Check completion only when not delaying and review isn't already marked complete
     if (!isDelaying && !reviewCompleted && words.length > 0 && reviewedCount >= words.length) {
        handleReviewComplete();
     }
@@ -100,53 +110,50 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
 
   const handleToggleTranslation = () => {
-    if (isDelaying) return; // Prevent toggling during delay
+    if (isDelaying) return;
     setShowTranslation((prev) => !prev);
   };
 
- const handleMarkEasy = () => {
+ const handleMarkEasy = useCallback(() => {
     if (currentWord && !isDelaying) {
       if (!easyWordIds.includes(currentWord.id)) {
         setEasyWordIds(prev => [...prev, currentWord.id]);
       }
-      onToggleHardWord(currentWord.id, false); // Mark as easy
-      setReviewedCount(prev => prev + 1); // Increment reviewed count
-      handleNextWordLogic(); // Move to the next word or complete
+      onToggleHardWord(currentWord.id, false);
+      setReviewedCount(prev => prev + 1); // Increment reviewed count immediately
+      handleNextWordLogic(); // Advance state
     }
-  };
+  }, [currentWord, isDelaying, easyWordIds, onToggleHardWord, handleNextWordLogic]);
 
 
- const handleMarkHard = () => {
+ const handleMarkHard = useCallback(() => {
     if (currentWord && !isDelaying) {
       setHardWordCount(prevCount => prevCount + 1);
-      onToggleHardWord(currentWord.id, true); // Mark as hard
+      onToggleHardWord(currentWord.id, true);
 
-      // Show translation and start delay
       setShowTranslation(true);
       setIsDelaying(true);
 
-      // Clear previous timeout if any
       if (hardButtonTimeoutRef.current) {
           clearTimeout(hardButtonTimeoutRef.current);
       }
 
-      // Set timeout to advance after 3 seconds
       hardButtonTimeoutRef.current = setTimeout(() => {
         setReviewedCount(prev => prev + 1); // Increment reviewed count *after* delay
-        handleNextWordLogic(); // Move to the next word or complete
-         hardButtonTimeoutRef.current = null; // Clear ref after execution
-      }, 3000); // 3000 milliseconds = 3 seconds
+        handleNextWordLogic();
+         hardButtonTimeoutRef.current = null;
+      }, 3000);
     }
-  };
+  }, [currentWord, isDelaying, onToggleHardWord, handleNextWordLogic]); // Added handleNextWordLogic
 
-  const handleReviewComplete = useCallback(async () => { // Make it async
-    if (reviewCompleted) return; // Prevent multiple calls
+  const handleReviewComplete = useCallback(async () => {
+    if (reviewCompleted) return;
     console.log("Calling onReviewComplete with easy IDs:", easyWordIds);
-    setReviewCompleted(true); // Mark review as completed first
-    await onReviewComplete(easyWordIds); // Pass easy IDs for deletion and wait
-    toast({ title: "تمت مراجعة جميع الكلمات!" });
-    router.push('/hard-words'); // Navigate after completion
-  }, [reviewCompleted, onReviewComplete, easyWordIds, toast, router]); // Added router
+    setReviewCompleted(true);
+    await onReviewComplete(easyWordIds);
+    // Navigation is now handled by the Finish Session button or automatically
+    router.push('/hard-words'); // Navigate to hard words page after completion
+  }, [reviewCompleted, onReviewComplete, easyWordIds, router]); // Removed toast, added router
 
 
   const progress = words.length > 0 ? (reviewedCount / words.length) * 100 : 0;
@@ -166,7 +173,6 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   }
 
   if (reviewCompleted) {
-    // This state might not be visible for long due to the automatic navigation
     return (
       <div className="flex flex-col items-center space-y-4 mt-10">
         <div className="text-center text-lg font-semibold">
@@ -179,15 +185,13 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   }
 
 
-   // Added loading state check
   if (!currentWord) {
-     // Should be covered by loading or empty state, but as a safeguard.
     return <div className="text-center mt-10">جاري تحميل الكلمة...</div>;
   }
 
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center pb-20"> {/* Add padding-bottom */}
 
       <div className="mb-4 w-full max-w-md">
         <div className="flex justify-between text-sm text-muted-foreground mb-1">
@@ -202,18 +206,16 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
         </div>
       </div>
 
-        <Card className="glass-card p-6 w-full max-w-md mb-4 min-h-[12rem] flex flex-col justify-center items-center relative"> {/* Added relative positioning */}
-         {/* Display English word */}
+        <Card className="glass-card p-6 w-full max-w-md mb-4 min-h-[12rem] flex flex-col justify-center items-center relative">
         <div className="text-4xl lg:text-5xl font-bold text-center mb-2 break-words w-full px-2">
           {currentWord?.english || '...'}
         </div>
         {showTranslation && (
-           // Display Arabic translation when shown
           <div className="text-xl text-gray-400 text-center mt-2 break-words w-full px-2">
             {currentWord?.arabic || '...'}
           </div>
         )}
-        {isDelaying && ( // Indicate delaying state visually
+        {isDelaying && (
             <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
                 <Loader2 className="inline-block h-3 w-3 animate-spin mr-1"/>
                 التالي بعد قليل...
@@ -223,29 +225,29 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
 
         <div className="flex justify-between items-center space-x-4 rtl:space-x-reverse mb-4 w-full max-w-md">
-           {/* Right side buttons (Previous and Show/Hide) - Swapped */}
+          {/* Left side buttons (Previous and Show/Hide) */}
           <div className="flex space-x-2 rtl:space-x-reverse">
              <Button onClick={handlePreviousWord} disabled={currentWordIndex === 0 || isDelaying} size="icon" variant="outline">
-               <ArrowLeft className="w-5 h-5" /> {/* Use ArrowLeft icon */}
-               <span className="sr-only">الكلمة السابقة</span> {/* Screen reader text */}
+               <ArrowRight className="w-5 h-5" /> {/* Use ArrowRight for previous in RTL */}
+               <span className="sr-only">الكلمة السابقة</span>
              </Button>
             <Button variant="secondary" onClick={handleToggleTranslation} disabled={isDelaying} className="px-4 py-3">
             {showTranslation ? "إخفاء" : "إظهار"}
             </Button>
         </div>
 
-        {/* Left side buttons (Easy and Hard) - Swapped & Centered */}
+        {/* Right side buttons (Easy and Hard) - Centered */}
          <div className="flex justify-center space-x-2 rtl:space-x-reverse flex-1">
-            {/* Easy Button (now on the left in RTL) */}
-            <Button variant="success" onClick={handleMarkEasy} disabled={isDelaying} className="px-6 py-3">
-                <Check className="w-5 h-5 mr-2 rtl:ml-2" />
-                سهلة
-            </Button>
-            {/* Hard Button (now on the right in RTL) */}
+             {/* Hard Button (now on the right in RTL) */}
             <Button variant="destructive" onClick={handleMarkHard} disabled={isDelaying} className="px-6 py-3">
                 <X className="w-5 h-5 mr-2 rtl:ml-2" />
                 صعبة
             </Button>
+             {/* Easy Button (now on the left in RTL) */}
+             <Button variant="success" onClick={handleMarkEasy} disabled={isDelaying} className="px-6 py-3">
+                 <Check className="w-5 h-5 mr-2 rtl:ml-2" />
+                 سهلة
+             </Button>
         </div>
       </div>
 
@@ -255,9 +257,9 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
            variant="outline"
            onClick={handleReviewComplete}
            className="w-full"
-           disabled={isDelaying} // Disable if waiting for "hard" delay
+           disabled={isDelaying || reviewCompleted} // Also disable if already completed
          >
-           إنهاء الجلسة
+           {reviewCompleted ? 'اكتملت المراجعة' : 'إنهاء الجلسة'}
          </Button>
       </div>
     </div>
