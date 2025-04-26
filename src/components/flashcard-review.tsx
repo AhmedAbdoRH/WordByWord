@@ -81,7 +81,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
         if (!reviewCompleted) {
             // Ensure count matches total before completing
              setReviewedCount(prev => Math.max(prev, words.length)); // Ensure count is at least words.length
-            handleReviewComplete();
+             handleReviewComplete(); // Call completion logic
         }
     } else {
         setCurrentWordIndex(nextIndex);
@@ -139,15 +139,14 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
     }
   };
 
-  const handleReviewComplete = useCallback(() => {
+  const handleReviewComplete = useCallback(async () => { // Make it async
     if (reviewCompleted) return; // Prevent multiple calls
     console.log("Calling onReviewComplete with easy IDs:", easyWordIds);
     setReviewCompleted(true); // Mark review as completed first
-    onReviewComplete(easyWordIds); // Pass easy IDs for deletion
-    // Do not automatically navigate
-    // router.push('/hard-words');
-     toast({ title: "تمت مراجعة جميع الكلمات!" });
-  }, [reviewCompleted, onReviewComplete, easyWordIds, toast]); // Added dependencies
+    await onReviewComplete(easyWordIds); // Pass easy IDs for deletion and wait
+    toast({ title: "تمت مراجعة جميع الكلمات!" });
+    router.push('/hard-words'); // Navigate after completion
+  }, [reviewCompleted, onReviewComplete, easyWordIds, toast, router]); // Added router
 
 
   const progress = words.length > 0 ? (reviewedCount / words.length) * 100 : 0;
@@ -167,34 +166,14 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   }
 
   if (reviewCompleted) {
+    // This state might not be visible for long due to the automatic navigation
     return (
       <div className="flex flex-col items-center space-y-4 mt-10">
         <div className="text-center text-lg font-semibold">
           🎉 تمت مراجعة جميع الكلمات! 🎉
         </div>
-        <p className="text-muted-foreground text-sm">تم تصنيف {easyWordIds.length} كلمة كـ "سهلة" وسيتم حذفها.</p>
-        <p className="text-muted-foreground text-sm">تم تصنيف {hardWordCount} كلمة كـ "صعبة" في هذه الجلسة.</p>
-        <div className="flex justify-center space-x-4 rtl:space-x-reverse mt-4">
-          <Button onClick={() => {
-            // Reset state for a new review session
-            setCurrentWordIndex(0);
-            setReviewedCount(0);
-            setHardWordCount(0);
-            setEasyWordIds([]);
-            setReviewCompleted(false);
-            setShowTranslation(false);
-            setIsDelaying(false); // Reset delay state
-             if (hardButtonTimeoutRef.current) {
-                clearTimeout(hardButtonTimeoutRef.current); // Clear timeout
-                hardButtonTimeoutRef.current = null;
-             }
-          }}>
-            المراجعة مرة أخرى
-          </Button>
-          <Button variant="secondary" onClick={() => router.push('/hard-words')}>
-             الذهاب إلى الكلمات الصعبة ({words.length - easyWordIds.length}) {/* Show remaining count */}
-          </Button>
-        </div>
+        <p className="text-muted-foreground text-sm">جاري الانتقال إلى صفحة الكلمات الصعبة...</p>
+         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -223,7 +202,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
         </div>
       </div>
 
-        <Card className="glass-card p-6 w-full max-w-md mb-4 min-h-[12rem] flex flex-col justify-center items-center">
+        <Card className="glass-card p-6 w-full max-w-md mb-4 min-h-[12rem] flex flex-col justify-center items-center relative"> {/* Added relative positioning */}
          {/* Display English word */}
         <div className="text-4xl lg:text-5xl font-bold text-center mb-2 break-words w-full px-2">
           {currentWord?.english || '...'}
@@ -244,7 +223,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
 
 
         <div className="flex justify-between items-center space-x-4 rtl:space-x-reverse mb-4 w-full max-w-md">
-          {/* Left side buttons (Previous and Show/Hide) */}
+           {/* Right side buttons (Previous and Show/Hide) - Swapped */}
           <div className="flex space-x-2 rtl:space-x-reverse">
              <Button onClick={handlePreviousWord} disabled={currentWordIndex === 0 || isDelaying} size="icon" variant="outline">
                <ArrowLeft className="w-5 h-5" /> {/* Use ArrowLeft icon */}
@@ -255,17 +234,17 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
             </Button>
         </div>
 
-        {/* Right side buttons (Easy and Hard) - Centered */}
-         <div className="flex justify-center space-x-2 rtl:space-x-reverse flex-1"> {/* Added justify-center and flex-1 */}
-            {/* Hard Button (appears on the right in RTL) */}
-            <Button variant="destructive" onClick={handleMarkHard} disabled={isDelaying} className="px-6 py-3">
-                <X className="w-5 h-5 mr-2 rtl:ml-2" /> {/* Adjust icon margin for RTL */}
-                صعبة
-            </Button>
-             {/* Easy Button (appears on the left in RTL) */}
+        {/* Left side buttons (Easy and Hard) - Swapped & Centered */}
+         <div className="flex justify-center space-x-2 rtl:space-x-reverse flex-1">
+            {/* Easy Button (now on the left in RTL) */}
             <Button variant="success" onClick={handleMarkEasy} disabled={isDelaying} className="px-6 py-3">
-                <Check className="w-5 h-5 mr-2 rtl:ml-2" /> {/* Adjust icon margin for RTL */}
+                <Check className="w-5 h-5 mr-2 rtl:ml-2" />
                 سهلة
+            </Button>
+            {/* Hard Button (now on the right in RTL) */}
+            <Button variant="destructive" onClick={handleMarkHard} disabled={isDelaying} className="px-6 py-3">
+                <X className="w-5 h-5 mr-2 rtl:ml-2" />
+                صعبة
             </Button>
         </div>
       </div>
@@ -284,4 +263,3 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
     </div>
   );
 };
-

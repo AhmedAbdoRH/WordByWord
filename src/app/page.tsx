@@ -33,6 +33,8 @@ export default function Home() {
   const [words, setWords] = useState<WordType[]>([])
   const [loading, setLoading] = useState(true); // Loading state for words
   const { user, loading: authLoading } = useAuth(); // Auth loading state
+  const [dbInitialized, setDbInitialized] = useState(false);
+  const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
   const [bulkInput, setBulkInput] = useState("");
   const [hardWords, setHardWords] = useState<WordType[]>([]);
   const [activeTab, setActiveTab] = useState("add"); // State to control active tab
@@ -41,13 +43,19 @@ export default function Home() {
   const router = useRouter();
   const { toast } = useToast(); // Initialize toast
 
+   useEffect(() => {
+     if (db) {
+       setDbInitialized(true);
+       setWordsCollectionRef(collection(db, "words"));
+     }
+   }, []); // Run only once on mount
+
 
   const getWords = useCallback(async () => {
-    if (!db || !user) {
+    if (!dbInitialized || !wordsCollectionRef || !user) {
       setLoading(false);
       return;
     }
-    const wordsCollectionRef = collection(db, "words");
     setLoading(true);
     try {
       const q = query(wordsCollectionRef, where("uid", "==", user.uid));
@@ -62,22 +70,21 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [user]); // Removed db from dependencies as it's stable once initialized
+  }, [user, dbInitialized, wordsCollectionRef]);
 
   useEffect(() => {
-    if (user) {
+    if (user && dbInitialized) {
       getWords();
     } else if (!authLoading) { // Only clear/reset if auth is done loading and there's no user
       setWords([]);
       setHardWords([]);
       setLoading(false);
     }
-  }, [user, getWords, authLoading]);
+  }, [user, getWords, authLoading, dbInitialized]);
 
 
   const handleAddWords = async (newWords: { arabic: string; translation: string }[]) => {
-    if (!db || !user) return;
-    const wordsCollectionRef = collection(db, "words");
+     if (!dbInitialized || !wordsCollectionRef || !user) return;
 
     setLoading(true);
     try {
@@ -106,7 +113,7 @@ export default function Home() {
   };
 
   const handleToggleHardWord = useCallback(async (wordId: string, isHard: boolean) => {
-    if (!db || !user || !wordId) return;
+     if (!dbInitialized || !user || !wordId) return;
     console.log(`Toggling hard word: ${wordId}, isHard: ${isHard}`); // Debug log
     const wordRef = doc(db, "words", wordId);
     try {
@@ -114,7 +121,20 @@ export default function Home() {
         difficulty: isHard ? 'hard' : 'easy'
       });
       console.log(`Word ${wordId} marked as ${isHard ? 'hard' : 'easy'}`);
-      // No need for optimistic update here, rely on getWords after review complete
+      // Optimistic update for hard words list for UI responsiveness
+        setHardWords(prevHardWords => {
+            if (isHard) {
+                // If marking as hard, add it if not already present
+                const wordToAdd = words.find(w => w.id === wordId);
+                if (wordToAdd && !prevHardWords.some(hw => hw.id === wordId)) {
+                    return [...prevHardWords, { ...wordToAdd, difficulty: 'hard' }];
+                }
+            } else {
+                // If marking as easy, remove it from hard words list
+                return prevHardWords.filter(hw => hw.id !== wordId);
+            }
+            return prevHardWords; // Return previous state if no changes
+        });
 
     } catch (error) {
       console.error("Error updating word difficulty in Firestore:", error);
@@ -123,7 +143,7 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  }, [user, toast]); // Removed db dependency
+  }, [user, dbInitialized, toast, words]); // Added words dependency for optimistic update
 
 
   const handleGenerateWords = async (selectedDifficulty: 'easy' | 'medium' | 'hard') => {
@@ -166,21 +186,20 @@ export default function Home() {
   };
 
 
-  const handleReviewComplete = useCallback(async (easyWordIds: string[]) => {
-    if (!db || !user) return;
+ const handleReviewComplete = useCallback(async (easyWordIds: string[]) => {
+    if (!dbInitialized || !user || !wordsCollectionRef) return;
     console.log("Review complete. Marking easy words for deletion:", easyWordIds);
     setLoading(true);
     try {
       const batch = [];
       for (const wordId of easyWordIds) {
-        const wordRef = doc(db, "words", wordId);
+        const wordRef = doc(db, "words", wordId); // Use db directly here
         batch.push(deleteDoc(wordRef)); // Changed to delete directly
       }
       await Promise.all(batch);
       console.log(`Successfully deleted ${easyWordIds.length} easy words.`);
       await getWords(); // Refresh words list after modification
-      // Do not navigate automatically anymore
-      // router.push('/hard-words');
+      // Navigation is handled inside FlashcardReview now
     } catch (error) {
       console.error("Error deleting easy words:", error);
       toast({
@@ -190,16 +209,22 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [user, getWords, toast]); // Removed db, router dependencies
+  }, [user, getWords, toast, dbInitialized, wordsCollectionRef]);
 
 
-  if (authLoading) {
-    return <div className="flex justify-center items-center h-screen">تحميل المصادقة...</div>;
+  if (authLoading || (!dbInitialized && !authLoading)) { // Show loading if auth is loading OR if auth is done but DB isn't ready
+    return (
+        <div className="flex justify-center items-center h-screen">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+             <p className="ml-2">جاري التحميل...</p>
+        </div>
+    );
   }
 
+
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold text-center mb-5">تطبيق كلماتي</h1>
+    <div className="container mx-auto py-10 px-4">
+      <h1 className="text-3xl font-bold text-center mb-6 text-foreground">تطبيق كلماتي</h1>
       {user ? (
         <>
           <div className="flex justify-between items-center mb-4">
@@ -242,6 +267,25 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </div>
+                 {/* Buttons positioned below tabs */}
+              <div className="flex flex-col items-center mt-6 space-y-2 w-full max-w-md mx-auto">
+                    <Button
+                        onClick={() => setActiveTab('review')}
+                        className="w-full"
+                        variant="outline"
+                        disabled={loading || words.length === 0}
+                    >
+                        مراجعة الكلمات {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : `(${words.length})`}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => router.push('/hard-words')}
+                      className="w-full"
+                      disabled={loading}
+                    >
+                     عرض الكلمات الصعبة ({hardWords.length})
+                    </Button>
+                 </div>
             </TabsContent>
             <TabsContent value="review" className="mt-5">
               {activeTab === 'review' && !loading && words.length > 0 && (
@@ -259,31 +303,11 @@ export default function Home() {
                  </div>
               )}
               {activeTab === 'review' && !loading && words.length === 0 && (
-                  <div className="text-center p-10 text-muted-foreground">لا توجد كلمات للمراجعة حالياً.</div>
+                  <div className="text-center p-10 text-muted-foreground">لا توجد كلمات للمراجعة حالياً. قم بإضافة كلمات أو توليدها أولاً.</div>
               )}
             </TabsContent>
           </Tabs>
-          {/* Buttons positioned below tabs - Conditionally rendered based on active tab */}
-          {activeTab === 'add' && (
-             <div className="flex flex-col items-center mt-6 space-y-2 w-full max-w-md mx-auto">
-                <Button
-                    onClick={() => setActiveTab('review')}
-                    className="w-full"
-                    variant="outline"
-                    disabled={loading || words.length === 0}
-                >
-                    مراجعة الكلمات ({words.length})
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => router.push('/hard-words')}
-                  className="w-full"
-                  disabled={loading}
-                >
-                 عرض الكلمات الصعبة ({hardWords.length})
-                </Button>
-             </div>
-          )}
+
         </>
       ) : (
          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
