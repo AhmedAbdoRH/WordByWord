@@ -9,7 +9,7 @@ import { collection, getDocs, addDoc, query, where, deleteDoc, doc, updateDoc } 
 import { useAuth } from "@/components/auth-provider";
 import { SignIn } from "@/components/sign-in";
 import { SignUp } from "@/components/sign-up";
-import { SignOut } from "@/components/sign-out";
+import { SignOut } from "@/components/sign-out"; // Keep import if needed elsewhere, but remove usage below
 import { Button } from "@/components/ui/button";
 import { FlashcardReview } from "@/components/flashcard-review"; // Import FlashcardReview
 import { generateWords } from "@/ai/flows/generate-words-flow";
