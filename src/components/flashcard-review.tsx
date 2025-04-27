@@ -78,9 +78,9 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
     setReviewCompleted(true); // Mark as completed immediately
     await onReviewComplete(easyWordIds);
     // Navigation is now handled by the Finish Session button or automatically
-    router.push('/hard-words'); // Navigate to hard words page after completion
+    // router.push('/hard-words'); // Navigation is now handled by the parent component or the effect below
     toast({ title: "تمت مراجعة جميع الكلمات!" });
-  }, [reviewCompleted, onReviewComplete, easyWordIds, loading, router, toast]); // Added loading and toast
+  }, [reviewCompleted, onReviewComplete, easyWordIds, loading, toast]); // Removed router dependency
 
 
   const handlePreviousWord = useCallback(() => {
@@ -173,16 +173,52 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
           clearTimeout(hardButtonTimeoutRef.current); // Clear existing timeout if any
       }
 
-      // Set timeout to advance after 3 seconds
+      // Set timeout to advance after 1.5 seconds
       hardButtonTimeoutRef.current = setTimeout(() => {
         handleNextWordLogic(); // Advance state after delay
          hardButtonTimeoutRef.current = null; // Clear ref after execution
-      }, 3000); // 3 seconds delay
+      }, 1500); // 1.5 seconds delay
     }
   }, [currentWord, isDelaying, onToggleHardWord, handleNextWordLogic, easyWordIds]);
 
 
   const progress = words.length > 0 ? (reviewedCount / words.length) * 100 : 0;
+
+
+  // ---- Session Completion on Unmount/Navigation ----
+  const reviewCompletedRef = useRef(reviewCompleted);
+  const easyWordIdsRef = useRef(easyWordIds);
+  const wordsLengthRef = useRef(words.length);
+  const onReviewCompleteRef = useRef(onReviewComplete);
+
+  useEffect(() => {
+      // Keep refs updated with the latest values
+      reviewCompletedRef.current = reviewCompleted;
+      easyWordIdsRef.current = easyWordIds;
+      wordsLengthRef.current = words.length;
+      onReviewCompleteRef.current = onReviewComplete;
+  }); // Update refs on every render
+
+  // Effect for handling component unmount (potential session end)
+  useEffect(() => {
+    // This function will be called when the component unmounts
+    return () => {
+      console.log("FlashcardReview unmounting. Checking session status.");
+      // Use refs to get the latest values at the time of unmount
+      if (
+          !reviewCompletedRef.current && // Only run if not already completed
+          wordsLengthRef.current > 0 &&   // Only run if there were words
+          easyWordIdsRef.current.length > 0 // Only run if some words were marked easy
+        ) {
+        console.log("Unmounting and review not complete. Calling onReviewComplete for marked easy words:", easyWordIdsRef.current);
+        // Call the completion handler with the easy words marked so far
+        onReviewCompleteRef.current(easyWordIdsRef.current);
+      }
+    };
+    // Empty dependency array ensures this cleanup runs only on unmount
+  }, []);
+  // ---- End Session Completion on Unmount/Navigation ----
+
 
    if (loading && !currentWord) {
      return (
@@ -311,3 +347,5 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
   );
 };
 
+
+    
