@@ -9,7 +9,6 @@ import { collection, getDocs, addDoc, query, where, deleteDoc, doc, updateDoc } 
 import { useAuth } from "@/components/auth-provider";
 import { SignIn } from "@/components/sign-in";
 import { SignUp } from "@/components/sign-up";
-import { SignOut } from "@/components/sign-out"; // Keep import if needed elsewhere, but remove usage below
 import { Button } from "@/components/ui/button";
 import { FlashcardReview } from "@/components/flashcard-review"; // Import FlashcardReview
 import { generateWords } from "@/ai/flows/generate-words-flow";
@@ -145,7 +144,16 @@ export default function Home() {
             )
           );
        // Update hardWords state based on the main words list after update
-       setHardWords(prevWords => prevWords.filter(word => word.difficulty !== 'easy'));
+       // Filter out easy words from the hardWords state immediately
+       if (!isHard) {
+            setHardWords(prev => prev.filter(hw => hw.id !== wordId));
+       } else {
+           // If marked as hard, ensure it's in hardWords (might already be there)
+           const wordToAdd = words.find(w => w.id === wordId);
+           if (wordToAdd && !hardWords.some(hw => hw.id === wordId)) {
+                setHardWords(prev => [...prev, wordToAdd]);
+           }
+       }
 
 
     } catch (error) {
@@ -155,7 +163,7 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  }, [user, dbInitialized, toast]); // Removed 'words' dependency to avoid potential loop, relies on setWords update
+  }, [user, dbInitialized, toast, words, hardWords]); // Added words and hardWords dependencies
 
 
   const handleGenerateWords = async (selectedDifficulty: 'easy' | 'medium' | 'hard') => {
@@ -199,7 +207,13 @@ export default function Home() {
 
 
   const handleReviewComplete = useCallback(async (easyWordIds: string[]) => {
-    if (!dbInitialized || !user || !wordsCollectionRef) return;
+    if (!dbInitialized || !user || !wordsCollectionRef || easyWordIds.length === 0) {
+        // If no words were marked easy, just navigate
+        if (easyWordIds.length === 0 && !loading) {
+           router.push('/hard-words'); // Navigate even if no easy words
+        }
+        return;
+    }
     console.log("Review complete. Marking easy words for deletion:", easyWordIds);
     setLoading(true);
     try {
@@ -211,7 +225,7 @@ export default function Home() {
       await Promise.all(batch);
       console.log(`Successfully deleted ${easyWordIds.length} easy words.`);
       await getWords(); // Refresh words list after modification
-       toast({ title: "تمت مراجعة جميع الكلمات بنجاح!" });
+       toast({ title: "تمت مراجعة جميع الكلمات بنجاح! تم حذف الكلمات السهلة." });
        router.push('/hard-words'); // Navigate to hard words page after completion
     } catch (error) {
       console.error("Error deleting easy words:", error);
@@ -222,7 +236,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [user, getWords, toast, dbInitialized, wordsCollectionRef, router]); // Added router dependency
+  }, [user, getWords, toast, dbInitialized, wordsCollectionRef, router, loading]); // Added loading dependency
 
 
   if (authLoading || (!dbInitialized && !authLoading)) {
@@ -236,14 +250,13 @@ export default function Home() {
 
 
   return (
-    <div className="container mx-auto py-10 px-4">
+    <div className="container mx-auto py-10 px-4 pb-20"> {/* Added padding-bottom */}
       <h1 className="text-3xl font-bold text-center mb-6 text-foreground">تطبيق كلماتي</h1>
       {user ? (
         <>
-          {/* Removed the top navigation div */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-5">
-              <TabsTrigger value="add">إضافة و استخراج</TabsTrigger>
+              {/* Removed the "إضافة و استخراج" tab trigger */}
               <TabsTrigger value="review" disabled={words.length === 0 && !loading}>
                 مراجعة الكلمات {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : `(${words.length})`}
               </TabsTrigger>
@@ -277,7 +290,6 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </div>
-                 {/* Removed bottom navigation buttons as they are now in BottomNav */}
             </TabsContent>
             <TabsContent value="review" className="mt-5">
               {activeTab === 'review' && !loading && words.length > 0 && (
@@ -322,3 +334,4 @@ export default function Home() {
     </div>
   );
 }
+
