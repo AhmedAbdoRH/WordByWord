@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs"; // Removed TabsList and TabsTrigger import
 import { WordInput } from "@/components/word-input"; // Corrected import path
 import { db } from "@/firebase/firebase-config";
 import { collection, getDocs, addDoc, query, where, deleteDoc, doc, updateDoc } from "firebase/firestore";
@@ -119,6 +119,7 @@ export default function Home() {
       setBulkInput("");
       toast({ title: `تمت إضافة ${newWords.length} كلمات بنجاح.` });
        setActiveTab('review'); // Switch to review tab after adding
+       router.push('/?tab=review'); // Ensure URL reflects the tab change
 
     } catch (error) {
       console.error("Error adding words to Firestore:", error);
@@ -255,12 +256,7 @@ export default function Home() {
       {user ? (
         <>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-5">
-              {/* Removed the "إضافة و استخراج" tab trigger */}
-              <TabsTrigger value="review" disabled={words.length === 0 && !loading}>
-                مراجعة الكلمات {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : `(${words.length})`}
-              </TabsTrigger>
-            </TabsList>
+            {/* Removed TabsList component */}
             <TabsContent value="add">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <WordInput
