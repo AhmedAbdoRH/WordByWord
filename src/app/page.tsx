@@ -2,18 +2,18 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { Tabs, TabsContent } from "@/components/ui/tabs"; // Removed TabsList and TabsTrigger import
-import { WordInput } from "@/components/word-input"; // Corrected import path
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { WordInput } from "@/components/word-input";
 import { db } from "@/firebase/firebase-config";
 import { collection, getDocs, addDoc, query, where, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { SignIn } from "@/components/sign-in";
 import { SignUp } from "@/components/sign-up";
 import { Button } from "@/components/ui/button";
-import { FlashcardReview } from "@/components/flashcard-review"; // Import FlashcardReview
-import { generateWords } from "@/ai/flows/generate-words-flow";
-import { extractWords } from "@/ai/flows/extract-words-flow";
-import { useRouter, useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { FlashcardReview } from "@/components/flashcard-review";
+// Import server actions
+import { generateWordsAction, extractWordsAction } from "@/app/actions"; // Use generateWordsAction
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -27,12 +27,12 @@ type WordType = {
   difficulty?: 'easy' | 'hard';
 };
 
+// TabHandler component remains the same
 function TabHandler() {
-    const searchParams = useSearchParams(); // Get search params
-    const initialTab = searchParams.get('tab') || 'add'; // Read tab from query param
+    const searchParams = useSearchParams();
+    const initialTab = searchParams.get('tab') || 'add';
     const [activeTab, setActiveTab] = useState(initialTab);
 
-    // Update activeTab if query parameter changes
     useEffect(() => {
         const tabFromQuery = searchParams.get('tab');
         if (tabFromQuery && tabFromQuery !== activeTab) {
@@ -43,36 +43,37 @@ function TabHandler() {
 }
 
 export default function Home() {
-  const [words, setWords] = useState<WordType[]>([])
+  const [words, setWords] = useState<WordType[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbInitialized, setDbInitialized] = useState(false);
   const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
   const [hardWords, setHardWords] = useState<WordType[]>([]);
   const router = useRouter();
-  const searchParams = useSearchParams(); // Get search params
-  const initialTab = searchParams.get('tab') || 'add'; // Read tab from query param
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'add';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [longText, setLongText] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
-  const [bulkInput, setBulkInput] = useState(""); // Added state for bulk word input
+  const [bulkInput, setBulkInput] = useState("");
   const { toast } = useToast();
 
    useEffect(() => {
      if (db) {
        setDbInitialized(true);
        setWordsCollectionRef(collection(db, "words"));
+     } else {
+        // If db initialization failed or is still pending, keep loading false
+        setLoading(false);
      }
-   }, []);
+   }, [db]); // Depend on db itself
 
-  // Update activeTab if query parameter changes
    useEffect(() => {
      const tabFromQuery = searchParams.get('tab');
      if (tabFromQuery && tabFromQuery !== activeTab) {
        setActiveTab(tabFromQuery);
      }
    }, [searchParams, activeTab]);
-
 
   const getWords = useCallback(async () => {
     if (!dbInitialized || !wordsCollectionRef || !user) {
@@ -85,57 +86,54 @@ export default function Home() {
       const data = await getDocs(q);
       const allWords = data.docs.map((doc) => ({ ...(doc.data() as Omit<WordType, 'id'>), id: doc.id }));
       setWords(allWords);
-       // Filter hard words after fetching all words
       const hard = allWords.filter(word => word.difficulty !== 'easy');
       setHardWords(hard);
-
     } catch (error) {
       console.error("Error fetching words:", error);
       toast({ title: "فشل تحميل الكلمات", variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, [user, dbInitialized, wordsCollectionRef, toast]); // Added toast dependency
+  }, [user, dbInitialized, wordsCollectionRef, toast]);
 
   useEffect(() => {
     if (user && dbInitialized) {
       getWords();
-    } else if (!authLoading) {
+    } else if (!authLoading && !dbInitialized) {
+      // Ensure loading is false if auth is done but db is not ready
+      setLoading(false);
+    } else if (!authLoading && dbInitialized) {
+      // User is not logged in, clear words
       setWords([]);
       setHardWords([]);
       setLoading(false);
     }
   }, [user, getWords, authLoading, dbInitialized]);
 
-
   const handleAddWords = async (newWords: { arabic: string; translation: string }[]) => {
      if (!dbInitialized || !wordsCollectionRef || !user) return;
-
     setLoading(true);
     try {
       const wordsToAdd = newWords.map(word => ({
         arabic: word.arabic,
-        english: word.translation, // Use 'english' field name
+        english: word.translation,
         uid: user.uid,
-        difficulty: 'hard', // Default new words to 'hard'
+        difficulty: 'hard', // Default to hard
       }));
-
       const batch = [];
       for (const word of wordsToAdd) {
-        if (word.english && word.arabic) { // Check for english and arabic fields
+        if (word.english && word.arabic) {
           batch.push(addDoc(wordsCollectionRef, word));
         } else {
           console.warn("Skipping word due to missing English or Arabic field:", word);
         }
       }
       await Promise.all(batch);
-      await getWords(); // Refresh words after adding
-      // Clear bulk input after successful addition
+      await getWords();
       setBulkInput("");
       toast({ title: `تمت إضافة ${newWords.length} كلمات بنجاح.` });
-       setActiveTab('review'); // Switch to review tab after adding
-       router.push('/?tab=review'); // Ensure URL reflects the tab change
-
+       setActiveTab('review');
+       router.push('/?tab=review');
     } catch (error) {
       console.error("Error adding words to Firestore:", error);
       toast({ title: "فشل إضافة الكلمات", variant: "destructive" });
@@ -152,26 +150,22 @@ export default function Home() {
         difficulty: isHard ? 'hard' : 'easy'
       });
       console.log(`Word ${wordId} marked as ${isHard ? 'hard' : 'easy'}`);
-      // Optimistic update for hard words list is handled in FlashcardReview
-      // Update the main words list state as well for consistency if needed immediately
+       // Update local state immediately for faster UI feedback
        setWords(prevWords =>
             prevWords.map(w =>
               w.id === wordId ? { ...w, difficulty: isHard ? 'hard' : 'easy' } : w
             )
           );
-       // Update hardWords state based on the main words list after update
-       // Filter out easy words from the hardWords state immediately
        if (!isHard) {
+            // Remove from local hard words state if marked easy
             setHardWords(prev => prev.filter(hw => hw.id !== wordId));
        } else {
-           // If marked as hard, ensure it's in hardWords (might already be there)
+           // Add to local hard words state if marked hard (and not already there)
            const wordToAdd = words.find(w => w.id === wordId);
            if (wordToAdd && !hardWords.some(hw => hw.id === wordId)) {
                 setHardWords(prev => [...prev, wordToAdd]);
            }
        }
-
-
     } catch (error) {
       console.error("Error updating word difficulty in Firestore:", error);
       toast({
@@ -179,24 +173,26 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  }, [user, dbInitialized, toast, words, hardWords]); // Added words and hardWords dependencies
+  }, [user, dbInitialized, toast, words, hardWords]);
 
-
+  // Use the server action for generating words
   const handleGenerateWords = async (selectedDifficulty: 'easy' | 'medium' | 'hard') => {
-    setLoading(true); // Use general loading state
+    setLoading(true);
     try {
-      const newGeneratedWords = await generateWords({ difficulty: selectedDifficulty, count: 10 });
-      const formattedWords = newGeneratedWords.map(word => `${word.english} : ${word.arabic}`).join('\n');
+      // Call the server action
+      const newGeneratedWords = await generateWordsAction({ difficulty: selectedDifficulty, count: 10 }); // Use generateWordsAction
+      const formattedWords = newGeneratedWords.map((word: { english: string; arabic: string; }) => `${word.english} : ${word.arabic}`).join('\n');
       setBulkInput(prevBulkInput => (prevBulkInput ? prevBulkInput + '\n' : '') + formattedWords);
       toast({ title: `تم توليد ${newGeneratedWords.length} كلمات جديدة!` });
     } catch (error) {
       console.error("Error generating words:", error);
       toast({ title: "فشل توليد الكلمات", variant: "destructive" });
     } finally {
-      setLoading(false); // Stop general loading state
+      setLoading(false);
     }
   };
 
+  // Use the server action for extracting words
   const handleExtractWords = async () => {
     if (!longText.trim()) {
       toast({ title: "الرجاء إدخال نص للاستخراج منه.", variant: "destructive" });
@@ -204,11 +200,12 @@ export default function Home() {
     }
     setIsExtracting(true);
     try {
-      const extracted = await extractWords({ text: longText, count: 15 });
+      // Call the server action
+      const extracted = await extractWordsAction({ text: longText, count: 15 });
       if (extracted.length === 0) {
         toast({ title: "لم يتم العثور على كلمات صعبة.", variant: "default" });
       } else {
-        const formattedWords = extracted.map(word => `${word.english} : ${word.arabic}`).join('\n');
+        const formattedWords = extracted.map((word: { english: string; arabic: string; }) => `${word.english} : ${word.arabic}`).join('\n');
         setBulkInput(prevBulkInput => (prevBulkInput ? prevBulkInput + '\n' : '') + formattedWords);
         toast({ title: `تم استخراج ${extracted.length} كلمات صعبة وإضافتها إلى صندوق الإدخال.` });
         setLongText("");
@@ -221,12 +218,11 @@ export default function Home() {
     }
   };
 
-
   const handleReviewComplete = useCallback(async (easyWordIds: string[]) => {
     if (!dbInitialized || !user || !wordsCollectionRef || easyWordIds.length === 0) {
-        // If no words were marked easy, just navigate
-        if (easyWordIds.length === 0 && !loading) {
-           router.push('/hard-words'); // Navigate even if no easy words
+        // Navigate even if no words were marked easy in this session if review is considered complete
+        if (activeTab === 'review' && !loading) {
+           router.push('/hard-words');
         }
         return;
     }
@@ -235,14 +231,25 @@ export default function Home() {
     try {
       const batch = [];
       for (const wordId of easyWordIds) {
-        const wordRef = doc(db, "words", wordId);
-        batch.push(deleteDoc(wordRef));
+        // Ensure wordId is a non-empty string before creating a doc ref
+        if (typeof wordId === 'string' && wordId.length > 0) {
+          const wordRef = doc(db, "words", wordId);
+          batch.push(deleteDoc(wordRef));
+        } else {
+          console.warn("Invalid word ID encountered during deletion:", wordId);
+        }
       }
-      await Promise.all(batch);
-      console.log(`Successfully deleted ${easyWordIds.length} easy words.`);
-      await getWords(); // Refresh words list after modification
-       toast({ title: "تمت مراجعة جميع الكلمات بنجاح! تم حذف الكلمات السهلة." });
-       router.push('/hard-words'); // Navigate to hard words page after completion
+      if (batch.length > 0) {
+          await Promise.all(batch);
+          console.log(`Successfully deleted ${batch.length} easy words.`);
+          await getWords(); // Refresh the words list after deletion
+          toast({ title: "تمت مراجعة جميع الكلمات بنجاح! تم حذف الكلمات السهلة." });
+      } else {
+          console.log("No valid easy words to delete.");
+          toast({ title: "تمت مراجعة جميع الكلمات!" });
+      }
+
+       router.push('/hard-words'); // Navigate after successful deletion or if no words to delete
     } catch (error) {
       console.error("Error deleting easy words:", error);
       toast({
@@ -252,7 +259,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [user, getWords, toast, dbInitialized, wordsCollectionRef, router, loading]); // Added loading dependency
+  }, [user, getWords, toast, dbInitialized, wordsCollectionRef, router, loading, activeTab]); // Added loading and activeTab
 
 
   if (authLoading || (!dbInitialized && !authLoading)) {
@@ -264,21 +271,21 @@ export default function Home() {
     );
   }
 
-
   return (
-    <div className="container mx-auto py-10 px-4 pb-20"> {/* Added padding-bottom */}
+    <div className="container mx-auto py-10 px-4 pb-20"> {/* Increased padding-bottom */}
       <h1 className="text-3xl font-bold text-center mb-6 text-foreground">تطبيق كلماتي</h1>
       {user ? (
         <>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Removed TabsList component */}
-            <TabsContent value="add"> <Suspense>
+          {/* Tabs component removed, logic handled by BottomNav */}
+          {/* Conditional rendering based on activeTab state */}
+          {activeTab === 'add' && (
+            <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <WordInput
                   onAddWords={handleAddWords}
                   bulkInput={bulkInput}
                   setBulkInput={setBulkInput}
-                  onGenerateWords={handleGenerateWords}
+                  onGenerateWords={handleGenerateWords} // Pass the action handler
                   isLoading={loading || isExtracting}
                 />
                 <Card className="glass-card">
@@ -302,28 +309,31 @@ export default function Home() {
                 </Card>
               </div>
             </Suspense>
-            </TabsContent>
-            <TabsContent value="review" className="mt-5">
-              {activeTab === 'review' && !loading && words.length > 0 && (
-                <FlashcardReview
-                  words={words.filter(w => !!w.id && !!w.english && !!w.arabic)} // Ensure words have necessary fields
-                  onToggleHardWord={handleToggleHardWord}
-                  onReviewComplete={handleReviewComplete}
-                  loading={loading}
-                />
+          )}
+
+          {activeTab === 'review' && (
+            <div className="mt-5">
+              {!loading && words.length > 0 && (
+                 <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                    <FlashcardReview
+                        words={words.filter(w => !!w.id && !!w.english && !!w.arabic)} // Ensure words have necessary properties
+                        onToggleHardWord={handleToggleHardWord}
+                        onReviewComplete={handleReviewComplete}
+                        loading={loading} // Pass loading state
+                    />
+                 </Suspense>
               )}
-              {activeTab === 'review' && loading && (
+              {loading && (
                  <div className="text-center p-10">
                      <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
                      <p className="mt-2 text-muted-foreground">جاري تحميل الكلمات للمراجعة...</p>
                  </div>
               )}
-              {activeTab === 'review' && !loading && words.length === 0 && (
+              {!loading && words.length === 0 && (
                   <div className="text-center p-10 text-muted-foreground">لا توجد كلمات للمراجعة حالياً. قم بإضافة كلمات أو توليدها أولاً.</div>
               )}
-            </TabsContent>
-          </Tabs>
-
+            </div>
+          )}
         </>
       ) : (
          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
@@ -346,3 +356,5 @@ export default function Home() {
     </div>
   );
 }
+
+
