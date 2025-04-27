@@ -177,7 +177,7 @@ export const FlashcardReview: React.FC<FlashcardReviewProps> = ({ words, onToggl
       hardButtonTimeoutRef.current = setTimeout(() => {
         handleNextWordLogic(); // Advance state after delay
          hardButtonTimeoutRef.current = null; // Clear ref after execution
-      }, 1500); // 1.5 seconds delay
+      }, 1500); // 1500 milliseconds = 1.5 seconds
     }
   }, [currentWord, isDelaying, onToggleHardWord, handleNextWordLogic, easyWordIds]);
 
