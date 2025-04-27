@@ -23,7 +23,7 @@ export default function RootLayout({
 }) {
 
   return (
-    <html lang="ar" dir="rtl" className="dark"> {/* Ensure dark mode is applied */}
+    <html lang="ar" dir="rtl" className="dark">
       <head>
         {/* Metadata is handled by Next.js via src/app/metadata.ts */}
       </head>
