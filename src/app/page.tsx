@@ -55,6 +55,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [longText, setLongText] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
+  const [bulkInput, setBulkInput] = useState(""); // Added state for bulk word input
   const { toast } = useToast();
 
    useEffect(() => {
@@ -345,5 +346,3 @@ export default function Home() {
     </div>
   );
 }
-
-
