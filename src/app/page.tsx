@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { FlashcardReview } from "@/components/flashcard-review"; // Import FlashcardReview
 import { generateWords } from "@/ai/flows/generate-words-flow";
 import { extractWords } from "@/ai/flows/extract-words-flow";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation'; // Import useSearchParams
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -36,10 +36,12 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const [bulkInput, setBulkInput] = useState("");
   const [hardWords, setHardWords] = useState<WordType[]>([]);
-  const [activeTab, setActiveTab] = useState("add");
+  const router = useRouter();
+  const searchParams = useSearchParams(); // Get search params
+  const initialTab = searchParams.get('tab') || 'add'; // Read tab from query param
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [longText, setLongText] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
-  const router = useRouter();
   const { toast } = useToast();
 
    useEffect(() => {
@@ -48,6 +50,14 @@ export default function Home() {
        setWordsCollectionRef(collection(db, "words"));
      }
    }, []);
+
+  // Update activeTab if query parameter changes
+   useEffect(() => {
+     const tabFromQuery = searchParams.get('tab');
+     if (tabFromQuery && tabFromQuery !== activeTab) {
+       setActiveTab(tabFromQuery);
+     }
+   }, [searchParams, activeTab]);
 
 
   const getWords = useCallback(async () => {
@@ -201,9 +211,8 @@ export default function Home() {
       await Promise.all(batch);
       console.log(`Successfully deleted ${easyWordIds.length} easy words.`);
       await getWords(); // Refresh words list after modification
-      // Navigation is handled inside FlashcardReview now
        toast({ title: "تمت مراجعة جميع الكلمات بنجاح!" });
-      // router.push('/hard-words'); // Navigation handled in FlashcardReview
+       router.push('/hard-words'); // Navigate to hard words page after completion
     } catch (error) {
       console.error("Error deleting easy words:", error);
       toast({
@@ -213,7 +222,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [user, getWords, toast, dbInitialized, wordsCollectionRef]); // Removed router from dependencies
+  }, [user, getWords, toast, dbInitialized, wordsCollectionRef, router]); // Added router dependency
 
 
   if (authLoading || (!dbInitialized && !authLoading)) {
@@ -231,10 +240,7 @@ export default function Home() {
       <h1 className="text-3xl font-bold text-center mb-6 text-foreground">تطبيق كلماتي</h1>
       {user ? (
         <>
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-sm text-muted-foreground">مرحباً, {user.email}</span>
-            <SignOut />
-          </div>
+          {/* Removed the top navigation div */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-5">
               <TabsTrigger value="add">إضافة و استخراج</TabsTrigger>
@@ -316,4 +322,3 @@ export default function Home() {
     </div>
   );
 }
-

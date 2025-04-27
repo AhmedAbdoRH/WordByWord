@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation'; // Import useSearchParams
 import { Home, BookOpenCheck, ListX } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useAuth } from './auth-provider';
 
 export const BottomNav = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams(); // Get search params
   const { user } = useAuth(); // Get user state
 
   // Don't render the nav if the user is not logged in
@@ -18,22 +19,25 @@ export const BottomNav = () => {
   }
 
   const navItems = [
-    { href: '/', label: 'الإدخال', icon: Home },
-    // For now, review is a tab on the home page. Linking to '/' is sufficient.
-    // If Review becomes its own page, update href to '/review'
-    { href: '/', label: 'المراجعة', icon: BookOpenCheck },
+    { href: '/', label: 'الإدخال', icon: Home, tab: 'add' }, // Link to home page, tab 'add'
+    { href: '/', label: 'المراجعة', icon: BookOpenCheck, tab: 'review' }, // Link to home page, tab 'review'
     { href: '/hard-words', label: 'الصعبة', icon: ListX },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border flex justify-around items-center z-50 shadow-md">
       {navItems.map((item) => {
-        // Special handling for review tab link - active only if on '/'
-        // If Review becomes its own page, use `pathname === item.href` like others
-        const isActive = item.label === 'المراجعة' ? pathname === '/' : pathname === item.href;
+        const currentTab = searchParams.get('tab');
+        // Check if the current path matches and, if applicable, the tab matches
+        const isActive = item.href === '/'
+          ? pathname === '/' && (item.tab === (currentTab ?? 'add')) // Default to 'add' tab if none is present
+          : pathname === item.href;
+
+        // Construct href with query param if it's a tabbed link on the homepage
+        const hrefWithTab = item.href === '/' && item.tab ? `${item.href}?tab=${item.tab}` : item.href;
 
         return (
-          <Link key={item.label} href={item.href} passHref legacyBehavior>
+          <Link key={item.label} href={hrefWithTab} passHref legacyBehavior>
             <Button
               variant="ghost"
               className={cn(
@@ -42,6 +46,7 @@ export const BottomNav = () => {
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
+              aria-current={isActive ? 'page' : undefined} // Add aria-current for accessibility
             >
               <item.icon className="w-5 h-5 mb-1" />
               {item.label}
