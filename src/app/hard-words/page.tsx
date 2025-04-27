@@ -66,7 +66,8 @@ const HardWordsPage = () => {
   }, [user, authLoading, getWords]);
 
   const handleCopyToClipboard = () => {
-    const textToCopy = hardWords.map(word => `${word.english} : ${word.arabic}`).join("\n");
+    const textToCopy = hardWords.map(word => `${word.english} : ${word.arabic}`).join("
+");
     navigator.clipboard.writeText(textToCopy);
     toast({
       title: "تم نسخ الكلمات الصعبة إلى الحافظة!",
@@ -91,7 +92,7 @@ const HardWordsPage = () => {
            .map(docSnapshot => docSnapshot.id);
 
 
-       const batch = [];
+       const batch: Promise<void>[] = [];
        currentHardWords.forEach((docId) => {
          const docRef = doc(db, "words", docId);
          batch.push(deleteDoc(docRef));

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs"; // Removed TabsList and TabsTrigger import
 import { WordInput } from "@/components/word-input"; // Corrected import path
 import { db } from "@/firebase/firebase-config";
@@ -27,13 +27,27 @@ type WordType = {
   difficulty?: 'easy' | 'hard';
 };
 
+function TabHandler() {
+    const searchParams = useSearchParams(); // Get search params
+    const initialTab = searchParams.get('tab') || 'add'; // Read tab from query param
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    // Update activeTab if query parameter changes
+    useEffect(() => {
+        const tabFromQuery = searchParams.get('tab');
+        if (tabFromQuery && tabFromQuery !== activeTab) {
+            setActiveTab(tabFromQuery);
+        }
+    }, [searchParams, activeTab]);
+    return { activeTab, setActiveTab };
+}
+
 export default function Home() {
   const [words, setWords] = useState<WordType[]>([])
   const [loading, setLoading] = useState(true);
   const [dbInitialized, setDbInitialized] = useState(false);
   const [wordsCollectionRef, setWordsCollectionRef] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
-  const [bulkInput, setBulkInput] = useState("");
   const [hardWords, setHardWords] = useState<WordType[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams(); // Get search params
@@ -257,7 +271,7 @@ export default function Home() {
         <>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Removed TabsList component */}
-            <TabsContent value="add">
+            <TabsContent value="add"> <Suspense>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <WordInput
                   onAddWords={handleAddWords}
@@ -286,6 +300,7 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </div>
+            </Suspense>
             </TabsContent>
             <TabsContent value="review" className="mt-5">
               {activeTab === 'review' && !loading && words.length > 0 && (
@@ -330,4 +345,5 @@ export default function Home() {
     </div>
   );
 }
+
 
