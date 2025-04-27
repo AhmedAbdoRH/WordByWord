@@ -66,8 +66,7 @@ const HardWordsPage = () => {
   }, [user, authLoading, getWords]);
 
   const handleCopyToClipboard = () => {
-    const textToCopy = hardWords.map(word => `${word.english} : ${word.arabic}`).join("
-");
+    const textToCopy = hardWords.map(word => `${word.english} : ${word.arabic}`).join("\n");
     navigator.clipboard.writeText(textToCopy);
     toast({
       title: "تم نسخ الكلمات الصعبة إلى الحافظة!",
@@ -190,3 +189,4 @@ const HardWordsPage = () => {
 };
 
 export default HardWordsPage;
+
