@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-provider";
@@ -66,7 +65,8 @@ const HardWordsPage = () => {
   }, [user, authLoading, getWords]);
 
   const handleCopyToClipboard = () => {
-    const textToCopy = hardWords.map(word => `${word.english} : ${word.arabic}`).join("\n");
+    const textToCopy = hardWords.map(word => `${word.english} : ${word.arabic}`).join("
+");
     navigator.clipboard.writeText(textToCopy);
     toast({
       title: "تم نسخ الكلمات الصعبة إلى الحافظة!",
@@ -135,56 +135,58 @@ const HardWordsPage = () => {
 
 
   return (
-    <div className="container mx-auto py-10 px-4 pb-24"> {/* Increased padding-bottom */}
-      <h1 className="text-3xl font-bold text-center mb-6 text-foreground">الكلمات الصعبة</h1>
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="container mx-auto py-10 px-4 pb-24"> {/* Increased padding-bottom */}
+        <h1 className="text-3xl font-bold text-center mb-6 text-foreground">الكلمات الصعبة</h1>
 
-      {hardWords.length > 0 ? (
-        <div className="flex flex-col items-center">
-          <Card className="glass-card p-6 w-full max-w-lg mx-auto mb-6 shadow-lg">
-             <ul className="space-y-2 text-lg text-foreground">
-              {hardWords.map((word) => (
-                 <li key={word.id} className="flex justify-between items-center border-b border-border/50 pb-2 last:border-b-0">
-                   <span className="font-semibold">{word.english}</span>
-                   <span className="text-muted-foreground">{word.arabic}</span>
-                 </li>
-              ))}
-            </ul>
-          </Card>
+        {hardWords.length > 0 ? (
+          <div className="flex flex-col items-center">
+            <Card className="glass-card p-6 w-full max-w-lg mx-auto mb-6 shadow-lg">
+               <ul className="space-y-2 text-lg text-foreground">
+                {hardWords.map((word) => (
+                   <li key={word.id} className="flex justify-between items-center border-b border-border/50 pb-2 last:border-b-0">
+                     <span className="font-semibold">{word.english}</span>
+                     <span className="text-muted-foreground">{word.arabic}</span>
+                   </li>
+                ))}
+              </ul>
+            </Card>
 
-          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 rtl:sm:space-x-reverse w-full max-w-lg mb-6">
-             <Button variant="outline" onClick={handleCopyToClipboard} className="w-full sm:w-auto">
-               <Copy className="w-4 h-4 mr-2 rtl:ml-2"/>
-              نسخ الكلمات
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteAllWords} className="w-full sm:w-auto" disabled={isLoading}>
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="w-4 h-4 mr-2 rtl:ml-2"/>}
-              حذف الكل
-            </Button>
-          </div>
-
-            {/* Buttons for navigation */}
-          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 rtl:sm:space-x-reverse w-full max-w-lg">
-             <Button variant="secondary" onClick={() => router.push('/')} className="w-full sm:w-auto">
-               <ArrowRight className="w-4 h-4 mr-2 rtl:ml-2"/> {/* Icon for going back */}
-               العودة للإدخال
-             </Button>
-              {/* Assuming Review is on the main page, linking back to it */}
-              <Button variant="default" onClick={() => router.push('/?tab=review')} className="w-full sm:w-auto">
-                <ArrowLeft className="w-4 h-4 mr-2 rtl:ml-2"/> {/* Icon for going to review */}
-                 المراجعة مرة أخرى
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 rtl:sm:space-x-reverse w-full max-w-lg mb-6">
+               <Button variant="outline" onClick={handleCopyToClipboard} className="w-full sm:w-auto">
+                 <Copy className="w-4 h-4 mr-2 rtl:ml-2"/>
+                نسخ الكلمات
               </Button>
-          </div>
+              <Button variant="destructive" onClick={handleDeleteAllWords} className="w-full sm:w-auto" disabled={isLoading}>
+               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="w-4 h-4 mr-2 rtl:ml-2"/>}
+                حذف الكل
+              </Button>
+            </div>
 
-        </div>
-      ) : (
-         <div className="text-center mt-10 flex flex-col items-center px-4">
-          <p className="text-muted-foreground text-lg">لا توجد كلمات صعبة مخزنة حتى الآن.</p>
-          <Button onClick={() => router.push('/')} className="mt-6">
-             الذهاب لصفحة الإدخال
-          </Button>
-        </div>
-      )}
-    </div>
+              {/* Buttons for navigation */}
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 rtl:sm:space-x-reverse w-full max-w-lg">
+               <Button variant="secondary" onClick={() => router.push('/')} className="w-full sm:w-auto">
+                 <ArrowRight className="w-4 h-4 mr-2 rtl:ml-2"/> {/* Icon for going back */}
+                 العودة للإدخال
+               </Button>
+                {/* Assuming Review is on the main page, linking back to it */}
+                <Button variant="default" onClick={() => router.push('/?tab=review')} className="w-full sm:w-auto">
+                  <ArrowLeft className="w-4 h-4 mr-2 rtl:ml-2"/> {/* Icon for going to review */}
+                   المراجعة مرة أخرى
+                </Button>
+            </div>
+
+          </div>
+        ) : (
+           <div className="text-center mt-10 flex flex-col items-center px-4">
+            <p className="text-muted-foreground text-lg">لا توجد كلمات صعبة مخزنة حتى الآن.</p>
+            <Button onClick={() => router.push('/')} className="mt-6">
+               الذهاب لصفحة الإدخال
+            </Button>
+          </div>
+        )}
+      </div>
+    </Suspense>
   );
 };
 
